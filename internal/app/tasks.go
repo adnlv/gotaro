@@ -20,6 +20,7 @@ type TaskListParams struct {
 	UserID uint64
 
 	CompletedView bool
+	ArchivedView  bool
 	Status          *domain.Status
 	Priority        *domain.Priority
 	Tag             string
@@ -52,8 +53,9 @@ func (s *TaskService) List(ctx context.Context, p TaskListParams) ([]domain.Task
 
 	q := store.TaskQuery{
 		UserID:        p.UserID,
-		OpenOnly:      !p.CompletedView && p.Status == nil,
-		CompletedOnly: p.CompletedView,
+		ArchivedOnly:  p.ArchivedView,
+		OpenOnly:      !p.ArchivedView && !p.CompletedView && p.Status == nil,
+		CompletedOnly: !p.ArchivedView && p.CompletedView,
 		Status:        p.Status,
 		Priority:      p.Priority,
 		Tag:           p.Tag,
@@ -171,6 +173,34 @@ func (s *TaskService) SetStatus(ctx context.Context, userID, taskID uint64, st d
 	}
 	now := time.Now().UTC()
 	existing.Status = st
+	existing.UpdatedAt = now
+	return s.Tasks.Update(ctx, s.Queries, existing)
+}
+
+func (s *TaskService) Archive(ctx context.Context, userID, taskID uint64) error {
+	existing, err := s.Tasks.Get(ctx, s.Queries, userID, taskID)
+	if err != nil {
+		return err
+	}
+	if existing.IsArchived() {
+		return nil
+	}
+	now := time.Now().UTC()
+	existing.ArchivedAt = &now
+	existing.UpdatedAt = now
+	return s.Tasks.Update(ctx, s.Queries, existing)
+}
+
+func (s *TaskService) Unarchive(ctx context.Context, userID, taskID uint64) error {
+	existing, err := s.Tasks.Get(ctx, s.Queries, userID, taskID)
+	if err != nil {
+		return err
+	}
+	if !existing.IsArchived() {
+		return nil
+	}
+	now := time.Now().UTC()
+	existing.ArchivedAt = nil
 	existing.UpdatedAt = now
 	return s.Tasks.Update(ctx, s.Queries, existing)
 }

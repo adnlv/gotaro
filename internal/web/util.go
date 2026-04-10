@@ -100,10 +100,16 @@ func intQuery(r *http.Request, key string, def int) int {
 	return n
 }
 
-func paginationLinks(r *http.Request, completed bool, limit, offset int, hasMore bool) (prev, next string, hasPrev, hasNext bool) {
-	base := "/tasks"
-	if completed {
+// listPath is "open", "completed", or "archived".
+func paginationLinks(r *http.Request, listPath string, limit, offset int, hasMore bool) (prev, next string, hasPrev, hasNext bool) {
+	var base string
+	switch listPath {
+	case "completed":
 		base = "/tasks/completed"
+	case "archived":
+		base = "/tasks/archived"
+	default:
+		base = "/tasks"
 	}
 	q := r.URL.Query()
 	sort := q.Get("sort")
@@ -166,6 +172,10 @@ func flashMessage(code string) string {
 		return "Task updated."
 	case "task_deleted":
 		return "Task deleted."
+	case "task_archived":
+		return "Task archived."
+	case "task_unarchived":
+		return "Task restored from archive."
 	default:
 		return ""
 	}

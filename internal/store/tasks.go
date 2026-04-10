@@ -16,6 +16,7 @@ type TaskQuery struct {
 
 	OpenOnly      bool
 	CompletedOnly bool
+	ArchivedOnly  bool
 
 	Status   *domain.Status
 	Priority *domain.Priority
@@ -159,6 +160,12 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 	b.WriteString(fmt.Sprint(arg))
 	args = append(args, q.UserID)
 	arg++
+
+	if q.ArchivedOnly {
+		b.WriteString(` AND t.archived_at IS NOT NULL`)
+	} else {
+		b.WriteString(` AND t.archived_at IS NULL`)
+	}
 
 	if q.CompletedOnly {
 		b.WriteString(` AND t.status = $`)

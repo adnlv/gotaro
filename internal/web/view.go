@@ -19,6 +19,7 @@ type PageUser struct {
 type TaskListView struct {
 	Tasks         []TaskRow
 	CompletedView bool
+	ArchivedView  bool
 	Query         ListQueryView
 	SortField     string
 	SortDir       string
@@ -67,6 +68,7 @@ type TaskFormView struct {
 	ID            uint64
 	Title         string
 	Description   string
+	Archived      bool
 	Status        string
 	StatusLabel   string
 	StatusBG      string

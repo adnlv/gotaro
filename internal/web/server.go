@@ -104,6 +104,7 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /logout", s.chain(http.HandlerFunc(s.postLogout), s.csrf, s.parseForm, s.requireAuth, s.sessionMiddleware))
 
 	mux.Handle("GET /tasks/completed", s.chain(http.HandlerFunc(s.getTasksCompleted), s.requireAuth, s.sessionMiddleware))
+	mux.Handle("GET /tasks/archived", s.chain(http.HandlerFunc(s.getTasksArchived), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("GET /tasks/new", s.chain(http.HandlerFunc(s.getTaskNew), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("POST /tasks", s.chain(http.HandlerFunc(s.postTaskCreate), s.csrf, s.parseForm, s.requireAuth, s.sessionMiddleware))
 
@@ -317,14 +318,18 @@ func (s *Server) postLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getTasksOpen(w http.ResponseWriter, r *http.Request) {
-	s.renderTaskList(w, r, false)
+	s.renderTaskList(w, r, false, false)
 }
 
 func (s *Server) getTasksCompleted(w http.ResponseWriter, r *http.Request) {
-	s.renderTaskList(w, r, true)
+	s.renderTaskList(w, r, true, false)
 }
 
-func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, completed bool) {
+func (s *Server) getTasksArchived(w http.ResponseWriter, r *http.Request) {
+	s.renderTaskList(w, r, false, true)
+}
+
+func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, completed, archived bool) {
 	ctx := r.Context()
 	sess, _ := sessionFrom(r.Context())
 
@@ -342,6 +347,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	params := app.TaskListParams{
 		UserID:        sess.User.ID,
 		CompletedView: completed,
+		ArchivedView:  archived,
 		Status:        st,
 		Priority:      pr,
 		Tag:           r.URL.Query().Get("tag"),
@@ -362,7 +368,13 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	}
 
 	hasMore := len(tasks) == limit
-	prev, next, hasPrev, hasNext := paginationLinks(r, completed, limit, offset, hasMore)
+	listPath := "open"
+	if archived {
+		listPath = "archived"
+	} else if completed {
+		listPath = "completed"
+	}
+	prev, next, hasPrev, hasNext := paginationLinks(r, listPath, limit, offset, hasMore)
 
 	qv := ListQueryView{
 		Status:   r.URL.Query().Get("status"),
@@ -382,6 +394,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	view := TaskListView{
 		Tasks:         taskRows(tasks, time.Now().UTC()),
 		CompletedView: completed,
+		ArchivedView:  archived,
 		Query:         qv,
 		SortField: firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
 		SortDir:   firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
@@ -540,6 +553,7 @@ func taskToFormView(t *domain.Task, edit bool) TaskFormView {
 	fv := TaskFormView{
 		ID:       t.ID,
 		Title:    t.Title,
+		Archived: t.IsArchived(),
 		Status:   t.Status.String(),
 		Priority: t.Priority.String(),
 		IsEdit:   edit,
@@ -563,6 +577,34 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	sess, _ := sessionFrom(r.Context())
 	sub := strings.Trim(strings.TrimPrefix(r.URL.Path, "/tasks/"), "/")
+
+	if after, ok := strings.CutSuffix(sub, "/archive"); ok {
+		id, err := strconv.ParseUint(after, 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if err := s.tasks.Archive(ctx, sess.User.ID, id); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, "/tasks?flash=task_archived", http.StatusSeeOther)
+		return
+	}
+
+	if after, ok := strings.CutSuffix(sub, "/unarchive"); ok {
+		id, err := strconv.ParseUint(after, 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		if err := s.tasks.Unarchive(ctx, sess.User.ID, id); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, "/tasks?flash=task_unarchived", http.StatusSeeOther)
+		return
+	}
 
 	if after, ok := strings.CutSuffix(sub, "/delete"); ok {
 		id, err := strconv.ParseUint(after, 10, 64)

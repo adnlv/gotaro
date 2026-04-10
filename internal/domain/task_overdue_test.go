@@ -51,4 +51,12 @@ func TestTaskIsOverdue(t *testing.T) {
 			t.Fatal("future due")
 		}
 	})
+
+	t.Run("archived not overdue", func(t *testing.T) {
+		t.Parallel()
+		task := &Task{Status: StatusTodo, DueDate: &yesterday, ArchivedAt: &today}
+		if task.IsOverdue(today) {
+			t.Fatal("archived task should not be overdue")
+		}
+	})
 }

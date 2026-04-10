@@ -25,12 +25,13 @@
 </style>
 <div class="tasks-toolbar">
 	<div class="tasks-toolbar__title">
-		<h1 class="h3">{{if $d.CompletedView}}Completed tasks{{else}}Open tasks{{end}}</h1>
+		<h1 class="h3">{{if $d.ArchivedView}}Archived tasks{{else if $d.CompletedView}}Completed tasks{{else}}Open tasks{{end}}</h1>
 	</div>
 	<div class="tasks-toolbar__toggle">
-		<div class="btn-group" role="group" aria-label="Task list view">
-			<a href="/tasks" class="btn btn-sm {{if not $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Open</a>
-			<a href="/tasks/completed" class="btn btn-sm {{if $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Completed</a>
+		<div class="btn-group flex-wrap" role="group" aria-label="Task list view">
+			<a href="/tasks" class="btn btn-sm {{if and (not $d.CompletedView) (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}">Open</a>
+			<a href="/tasks/completed" class="btn btn-sm {{if and $d.CompletedView (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}">Completed</a>
+			<a href="/tasks/archived" class="btn btn-sm {{if $d.ArchivedView}}btn-primary{{else}}btn-outline-primary{{end}}">Archived</a>
 		</div>
 	</div>
 	<div class="tasks-toolbar__actions">
@@ -38,7 +39,7 @@
 	</div>
 </div>
 
-<form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
+<form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.ArchivedView}}/tasks/archived{{else if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
 	<div class="row g-2">
 		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.StatusAccentBG}}style="border-left: 4px solid {{$d.Query.StatusAccentBG}}"{{end}}>
 			<label class="form-label small mb-0">Status</label>
@@ -190,6 +191,21 @@
 						</form>
 					</li>
 					<li><hr class="dropdown-divider"></li>
+					{{if $d.ArchivedView}}
+					<li>
+						<form method="post" action="/tasks/{{.ID}}/unarchive" class="px-3 py-1">
+							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+							<button class="dropdown-item" type="submit">Restore from archive</button>
+						</form>
+					</li>
+					{{else}}
+					<li>
+						<form method="post" action="/tasks/{{.ID}}/archive" class="px-3 py-1">
+							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+							<button class="dropdown-item" type="submit">Archive</button>
+						</form>
+					</li>
+					{{end}}
 					<li>
 						<form method="post" action="/tasks/{{.ID}}/delete" class="px-3 py-1" onsubmit="return confirm('Delete this task?');">
 							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">

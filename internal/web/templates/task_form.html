@@ -1,6 +1,15 @@
 {{define "content"}}
 {{$f := .Data}}
 <h1 class="h3 mb-3">{{if $f.IsEdit}}Edit task{{else}}New task{{end}}</h1>
+{{if and $f.IsEdit $f.Archived}}
+<div class="alert alert-secondary d-flex flex-wrap align-items-center justify-content-between gap-2">
+	<span>This task is archived and hidden from Open and Completed lists.</span>
+	<form method="post" action="/tasks/{{$f.ID}}/unarchive" class="m-0">
+		<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+		<button type="submit" class="btn btn-sm btn-outline-dark">Restore from archive</button>
+	</form>
+</div>
+{{end}}
 <form method="post" action="{{if $f.IsEdit}}/tasks/{{$f.ID}}{{else}}/tasks{{end}}" class="card card-body shadow-sm">
 	<input type="hidden" name="csrf_token" value="{{.CSRF}}">
 	<div class="mb-3">

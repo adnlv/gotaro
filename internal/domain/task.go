@@ -33,9 +33,9 @@ type Task struct {
 }
 
 // IsOverdue reports whether the task is still open and its due date is strictly before
-// the calendar day of asOf (compared in UTC). Done tasks are never overdue.
+// the calendar day of asOf (compared in UTC). Done and archived tasks are never overdue.
 func (t *Task) IsOverdue(asOf time.Time) bool {
-	if t.Status == StatusDone {
+	if t.Status == StatusDone || t.IsArchived() {
 		return false
 	}
 	if t.DueDate == nil {
@@ -46,6 +46,11 @@ func (t *Task) IsOverdue(asOf time.Time) bool {
 	dueDay := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.UTC)
 	today := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, time.UTC)
 	return dueDay.Before(today)
+}
+
+// IsArchived is true when the task has been archived (soft-hidden from normal lists).
+func (t *Task) IsArchived() bool {
+	return t.ArchivedAt != nil && !t.ArchivedAt.IsZero()
 }
 
 func (s Status) String() string {
