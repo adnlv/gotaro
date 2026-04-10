@@ -380,7 +380,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	}
 
 	view := TaskListView{
-		Tasks:         taskRows(tasks),
+		Tasks:         taskRows(tasks, time.Now().UTC()),
 		CompletedView: completed,
 		Query:         qv,
 		SortField: firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
@@ -409,7 +409,7 @@ func firstNonEmpty(a, b string) string {
 	return b
 }
 
-func taskRows(tasks []domain.Task) []TaskRow {
+func taskRows(tasks []domain.Task, now time.Time) []TaskRow {
 	out := make([]TaskRow, 0, len(tasks))
 	for _, t := range tasks {
 		sl, sbg, sfg := statusPresentation(t.Status)
@@ -433,6 +433,7 @@ func taskRows(tasks []domain.Task) []TaskRow {
 		if t.DueDate != nil {
 			row.DueDate = t.DueDate.UTC().Format("2006-01-02")
 		}
+		row.Overdue = t.IsOverdue(now)
 		for _, tg := range t.Tags {
 			c := strings.TrimSpace(tg.Color)
 			if c == "" {

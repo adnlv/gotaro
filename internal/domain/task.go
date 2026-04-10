@@ -32,6 +32,22 @@ type Task struct {
 	DueDate     *time.Time
 }
 
+// IsOverdue reports whether the task is still open and its due date is strictly before
+// the calendar day of asOf (compared in UTC). Done tasks are never overdue.
+func (t *Task) IsOverdue(asOf time.Time) bool {
+	if t.Status == StatusDone {
+		return false
+	}
+	if t.DueDate == nil {
+		return false
+	}
+	d := t.DueDate.UTC()
+	n := asOf.UTC()
+	dueDay := time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.UTC)
+	today := time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, time.UTC)
+	return dueDay.Before(today)
+}
+
 func (s Status) String() string {
 	switch s {
 	case StatusTodo:

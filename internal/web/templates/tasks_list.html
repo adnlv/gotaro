@@ -103,12 +103,13 @@
 {{else}}
 <div class="list-group shadow-sm">
 	{{range $d.Tasks}}
-	<div class="list-group-item">
+	<div class="list-group-item{{if .Overdue}} border-start border-danger border-4{{end}}">
 		<div class="d-flex justify-content-between align-items-start gap-2">
 			<div>
 				<a href="/tasks/{{.ID}}/edit" class="fw-semibold text-decoration-none">{{.Title}}</a>
 				<div class="small text-muted d-flex flex-wrap align-items-center gap-1">
-					<span>Created {{.CreatedAt}}{{if .DueDate}} · Due {{.DueDate}}{{end}}</span>
+					<span>Created {{.CreatedAt}}{{if .DueDate}} · <span {{if .Overdue}}class="text-danger fw-semibold"{{end}}>Due {{.DueDate}}</span>{{end}}</span>
+					{{if .Overdue}}<span class="badge rounded-pill bg-danger">Overdue</span>{{end}}
 					<span class="badge rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
 					<span class="badge rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
 				</div>

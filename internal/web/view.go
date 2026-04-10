@@ -54,6 +54,7 @@ type TaskRow struct {
 	PriorityFG    string
 	CreatedAt     string
 	DueDate       string
+	Overdue       bool
 	Tags          []TagRow
 }
 
