@@ -1,4 +1,7 @@
 # Live reload for local and Docker dev: https://github.com/air-verse/air
+#
+# With GOTARO_LIVE_TEMPLATES=1 (see Makefile / docker-compose.dev.yml), HTML templates are read from
+# disk on each request — save a .html file and refresh the browser. Air rebuilds are for .go changes.
 root = "."
 tmp_dir = "tmp"
 

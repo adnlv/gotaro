@@ -4,9 +4,11 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"fmt"
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -20,11 +22,22 @@ var templateFiles embed.FS
 
 const sessionCookieName = "gotaro_session"
 
+const (
+	tplFileLogin     = "login.html"
+	tplFileRegister  = "register.html"
+	tplFileTasksList = "tasks_list.html"
+	tplFileTaskForm  = "task_form.html"
+)
+
 type Server struct {
 	log    *slog.Logger
 	auth   *app.AuthService
 	tasks  *app.TaskService
 	secure bool
+
+	// liveTemplates: parse HTML from disk on every request (dev). No stale embed; refresh browser to see edits.
+	liveTemplates bool
+	templateDir   string
 
 	tplLogin     *template.Template
 	tplRegister  *template.Template
@@ -33,35 +46,49 @@ type Server struct {
 }
 
 func NewServer(log *slog.Logger, auth *app.AuthService, tasks *app.TaskService, secureCookie bool) (*Server, error) {
-	parsePair := func(page string) (*template.Template, error) {
+	live := os.Getenv("GOTARO_LIVE_TEMPLATES") == "1"
+	tplDir := strings.TrimSpace(os.Getenv("GOTARO_TEMPLATE_DIR"))
+	if tplDir == "" {
+		tplDir = "internal/web/templates"
+	}
+
+	s := &Server{
+		log:           log,
+		auth:          auth,
+		tasks:         tasks,
+		secure:        secureCookie,
+		liveTemplates: live,
+		templateDir:   tplDir,
+	}
+
+	if live {
+		return s, nil
+	}
+
+	parseEmbedded := func(page string) (*template.Template, error) {
 		return template.ParseFS(templateFiles, "templates/layout.html", "templates/"+page)
 	}
-	login, err := parsePair("login.html")
+	login, err := parseEmbedded(tplFileLogin)
 	if err != nil {
 		return nil, err
 	}
-	reg, err := parsePair("register.html")
+	reg, err := parseEmbedded(tplFileRegister)
 	if err != nil {
 		return nil, err
 	}
-	list, err := parsePair("tasks_list.html")
+	list, err := parseEmbedded(tplFileTasksList)
 	if err != nil {
 		return nil, err
 	}
-	form, err := parsePair("task_form.html")
+	form, err := parseEmbedded(tplFileTaskForm)
 	if err != nil {
 		return nil, err
 	}
-	return &Server{
-		log:          log,
-		auth:         auth,
-		tasks:        tasks,
-		secure:       secureCookie,
-		tplLogin:     login,
-		tplRegister:  reg,
-		tplTasksList: list,
-		tplTaskForm:  form,
-	}, nil
+	s.tplLogin = login
+	s.tplRegister = reg
+	s.tplTasksList = list
+	s.tplTaskForm = form
+	return s, nil
 }
 
 func (s *Server) Handler() http.Handler {
@@ -170,8 +197,35 @@ func (s *Server) pageUser(sess *domain.Session) *PageUser {
 	return &PageUser{ID: sess.User.ID, Email: sess.User.Email}
 }
 
-func (s *Server) render(w http.ResponseWriter, tpl *template.Template, d PageData) {
+func (s *Server) loadPageTemplates(pageFile string) (*template.Template, error) {
+	if s.liveTemplates {
+		return template.ParseFS(os.DirFS(s.templateDir), "layout.html", pageFile)
+	}
+	switch pageFile {
+	case tplFileLogin:
+		return s.tplLogin, nil
+	case tplFileRegister:
+		return s.tplRegister, nil
+	case tplFileTasksList:
+		return s.tplTasksList, nil
+	case tplFileTaskForm:
+		return s.tplTaskForm, nil
+	default:
+		return nil, fmt.Errorf("unknown template %q", pageFile)
+	}
+}
+
+func (s *Server) render(w http.ResponseWriter, pageFile string, d PageData) {
+	tpl, err := s.loadPageTemplates(pageFile)
+	if err != nil {
+		s.log.Error("template load", "page", pageFile, "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if s.liveTemplates {
+		w.Header().Set("Cache-Control", "no-store")
+	}
 	if err := tpl.ExecuteTemplate(w, "layout", d); err != nil {
 		s.log.Error("render", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -211,7 +265,7 @@ func (s *Server) getLogin(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 		return
 	}
-	s.render(w, s.tplLogin, PageData{Title: "Log in", Flash: flashMessage(r.URL.Query().Get("flash"))})
+	s.render(w, tplFileLogin, PageData{Title: "Log in", Flash: flashMessage(r.URL.Query().Get("flash"))})
 }
 
 func (s *Server) postLogin(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +276,7 @@ func (s *Server) postLogin(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrInvalidInput) {
 			msg = err.Error()
 		}
-		s.render(w, s.tplLogin, PageData{Title: "Log in", Error: msg})
+		s.render(w, tplFileLogin, PageData{Title: "Log in", Error: msg})
 		return
 	}
 	s.setSessionCookie(w, sess)
@@ -234,7 +288,7 @@ func (s *Server) getRegister(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 		return
 	}
-	s.render(w, s.tplRegister, PageData{Title: "Register"})
+	s.render(w, tplFileRegister, PageData{Title: "Register"})
 }
 
 func (s *Server) postRegister(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +299,7 @@ func (s *Server) postRegister(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrInvalidInput) {
 			msg = err.Error()
 		}
-		s.render(w, s.tplRegister, PageData{Title: "Register", Error: msg})
+		s.render(w, tplFileRegister, PageData{Title: "Register", Error: msg})
 		return
 	}
 	s.setSessionCookie(w, sess)
@@ -329,7 +383,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		NextLink:  next,
 	}
 
-	s.render(w, s.tplTasksList, PageData{
+	s.render(w, tplFileTasksList, PageData{
 		Title:  "Tasks",
 		User:   s.pageUser(sess),
 		CSRF:   sess.CSRFToken,
@@ -381,7 +435,7 @@ func (s *Server) getTaskNew(w http.ResponseWriter, r *http.Request) {
 		Status:   domain.StatusTodo.String(),
 		Priority: domain.PriorityMedium.String(),
 	}
-	s.render(w, s.tplTaskForm, PageData{
+	s.render(w, tplFileTaskForm, PageData{
 		Title:  "New task",
 		User:   s.pageUser(sess),
 		CSRF:   sess.CSRFToken,
@@ -395,7 +449,7 @@ func (s *Server) postTaskCreate(w http.ResponseWriter, r *http.Request) {
 	sess, _ := sessionFrom(r.Context())
 	tw, err := taskWriteFromForm(r)
 	if err != nil {
-		s.render(w, s.tplTaskForm, PageData{
+		s.render(w, tplFileTaskForm, PageData{
 			Title:  "New task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
@@ -407,7 +461,7 @@ func (s *Server) postTaskCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = s.tasks.Create(ctx, sess.User.ID, tw)
 	if err != nil {
-		s.render(w, s.tplTaskForm, PageData{
+		s.render(w, tplFileTaskForm, PageData{
 			Title:  "New task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
@@ -450,7 +504,7 @@ func (s *Server) handleTasksPath(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		s.render(w, s.tplTaskForm, PageData{
+		s.render(w, tplFileTaskForm, PageData{
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
@@ -535,7 +589,7 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fv := taskToFormView(t, true)
-		s.render(w, s.tplTaskForm, PageData{
+		s.render(w, tplFileTaskForm, PageData{
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
@@ -553,7 +607,7 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fv := taskToFormView(t, true)
-		s.render(w, s.tplTaskForm, PageData{
+		s.render(w, tplFileTaskForm, PageData{
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
