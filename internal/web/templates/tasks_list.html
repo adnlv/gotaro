@@ -40,7 +40,7 @@
 
 <form class="card card-body shadow-sm mb-3" method="get" action="{{if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
 	<div class="row g-2">
-		<div class="col-md-2">
+		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.StatusAccentBG}}style="border-left: 4px solid {{$d.Query.StatusAccentBG}}"{{end}}>
 			<label class="form-label small mb-0">Status</label>
 			<select class="form-select form-select-sm" name="status">
 				<option value="" {{if eq $d.Query.Status ""}}selected{{end}}>Any</option>
@@ -49,7 +49,7 @@
 				<option value="done" {{if eq $d.Query.Status "done"}}selected{{end}}>Done</option>
 			</select>
 		</div>
-		<div class="col-md-2">
+		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.PriorityAccentBG}}style="border-left: 4px solid {{$d.Query.PriorityAccentBG}}"{{end}}>
 			<label class="form-label small mb-0">Priority</label>
 			<select class="form-select form-select-sm" name="priority">
 				<option value="" {{if eq $d.Query.Priority ""}}selected{{end}}>Any</option>
@@ -107,7 +107,11 @@
 		<div class="d-flex justify-content-between align-items-start gap-2">
 			<div>
 				<a href="/tasks/{{.ID}}/edit" class="fw-semibold text-decoration-none">{{.Title}}</a>
-				<div class="small text-muted">Created {{.CreatedAt}}{{if .DueDate}} · Due {{.DueDate}}{{end}} · {{.Status}} · {{.Priority}}</div>
+				<div class="small text-muted d-flex flex-wrap align-items-center gap-1">
+					<span>Created {{.CreatedAt}}{{if .DueDate}} · Due {{.DueDate}}{{end}}</span>
+					<span class="badge rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
+					<span class="badge rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
+				</div>
 				{{if .Description}}<p class="mb-1 small">{{.Description}}</p>{{end}}
 				{{if .Tags}}
 				<div class="d-flex flex-wrap gap-1 mt-1">

@@ -364,17 +364,25 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	hasMore := len(tasks) == limit
 	prev, next, hasPrev, hasNext := paginationLinks(r, completed, limit, offset, hasMore)
 
+	qv := ListQueryView{
+		Status:   r.URL.Query().Get("status"),
+		Priority: r.URL.Query().Get("priority"),
+		Tag:      r.URL.Query().Get("tag"),
+		DueFrom:  r.URL.Query().Get("due_from"),
+		DueTo:    r.URL.Query().Get("due_to"),
+		Search:   r.URL.Query().Get("q"),
+	}
+	if strings.TrimSpace(qv.Status) != "" {
+		_, qv.StatusAccentBG, _ = statusPresentationFromSlug(qv.Status)
+	}
+	if strings.TrimSpace(qv.Priority) != "" {
+		_, qv.PriorityAccentBG, _ = priorityPresentationFromSlug(qv.Priority)
+	}
+
 	view := TaskListView{
 		Tasks:         taskRows(tasks),
 		CompletedView: completed,
-		Query: ListQueryView{
-			Status:   r.URL.Query().Get("status"),
-			Priority: r.URL.Query().Get("priority"),
-			Tag:      r.URL.Query().Get("tag"),
-			DueFrom:  r.URL.Query().Get("due_from"),
-			DueTo:    r.URL.Query().Get("due_to"),
-			Search:   r.URL.Query().Get("q"),
-		},
+		Query:         qv,
 		SortField: firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
 		SortDir:   firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
 		HasPrev:   hasPrev,
@@ -404,12 +412,20 @@ func firstNonEmpty(a, b string) string {
 func taskRows(tasks []domain.Task) []TaskRow {
 	out := make([]TaskRow, 0, len(tasks))
 	for _, t := range tasks {
+		sl, sbg, sfg := statusPresentation(t.Status)
+		pl, pbg, pfg := priorityPresentation(t.Priority)
 		row := TaskRow{
-			ID:        t.ID,
-			Title:     t.Title,
-			Status:    t.Status.String(),
-			Priority:  t.Priority.String(),
-			CreatedAt: t.CreatedAt.UTC().Format("2006-01-02 15:04"),
+			ID:            t.ID,
+			Title:         t.Title,
+			Status:        t.Status.String(),
+			StatusLabel:   sl,
+			StatusBG:      sbg,
+			StatusFG:      sfg,
+			Priority:      t.Priority.String(),
+			PriorityLabel: pl,
+			PriorityBG:    pbg,
+			PriorityFG:    pfg,
+			CreatedAt:     t.CreatedAt.UTC().Format("2006-01-02 15:04"),
 		}
 		if t.Description != nil {
 			row.Description = *t.Description
@@ -435,6 +451,7 @@ func (s *Server) getTaskNew(w http.ResponseWriter, r *http.Request) {
 		Status:   domain.StatusTodo.String(),
 		Priority: domain.PriorityMedium.String(),
 	}
+	decorateTaskFormColors(&fv)
 	s.render(w, tplFileTaskForm, PageData{
 		Title:  "New task",
 		User:   s.pageUser(sess),
@@ -475,7 +492,7 @@ func (s *Server) postTaskCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func taskFormFromRequest(r *http.Request) TaskFormView {
-	return TaskFormView{
+	fv := TaskFormView{
 		Title:       r.FormValue("title"),
 		Description: r.FormValue("description"),
 		Status:      r.FormValue("status"),
@@ -483,6 +500,8 @@ func taskFormFromRequest(r *http.Request) TaskFormView {
 		DueDate:     r.FormValue("due_date"),
 		Tags:        r.FormValue("tags"),
 	}
+	decorateTaskFormColors(&fv)
+	return fv
 }
 
 func (s *Server) handleTasksPath(w http.ResponseWriter, r *http.Request) {
@@ -535,6 +554,7 @@ func taskToFormView(t *domain.Task, edit bool) TaskFormView {
 		names = append(names, tg.Name)
 	}
 	fv.Tags = strings.Join(names, ", ")
+	decorateTaskFormColors(&fv)
 	return fv
 }
 

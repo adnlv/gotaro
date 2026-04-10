@@ -12,16 +12,16 @@
 		<textarea class="form-control" id="description" name="description" rows="4">{{$f.Description}}</textarea>
 	</div>
 	<div class="row g-2">
-		<div class="col-md-4">
-			<label class="form-label" for="status">Status</label>
+		<div class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.StatusBG}}">
+			<label class="form-label d-flex align-items-center gap-2" for="status">Status <span class="badge rounded-pill" style="background-color: {{$f.StatusBG}}; color: {{$f.StatusFG}}">{{$f.StatusLabel}}</span></label>
 			<select class="form-select" id="status" name="status">
 				<option value="todo" {{if eq $f.Status "todo"}}selected{{end}}>To do</option>
 				<option value="in_progress" {{if eq $f.Status "in_progress"}}selected{{end}}>In progress</option>
 				<option value="done" {{if eq $f.Status "done"}}selected{{end}}>Done</option>
 			</select>
 		</div>
-		<div class="col-md-4">
-			<label class="form-label" for="priority">Priority</label>
+		<div class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.PriorityBG}}">
+			<label class="form-label d-flex align-items-center gap-2" for="priority">Priority <span class="badge rounded-pill" style="background-color: {{$f.PriorityBG}}; color: {{$f.PriorityFG}}">{{$f.PriorityLabel}}</span></label>
 			<select class="form-select" id="priority" name="priority">
 				<option value="low" {{if eq $f.Priority "low"}}selected{{end}}>Low</option>
 				<option value="medium" {{if eq $f.Priority "medium"}}selected{{end}}>Medium</option>
