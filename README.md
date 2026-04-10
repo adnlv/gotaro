@@ -2,6 +2,10 @@
 
 GoTaro is a simple web-based task tracker written in Go (server-rendered HTML, no SPA).
 
+## Screenshot
+
+![Gotaro app screenshot](docs/images/app-screenshot.png)
+
 ## Run locally
 
 1. Start PostgreSQL and create a database.
@@ -18,6 +22,7 @@ Create a test user and populate tasks (with projects/tags) using:
 `go run ./cmd/seed`
 
 Defaults:
+
 - Email: `test@example.com`
 - Password: `test12345`
 - Tasks: `80`
@@ -26,6 +31,7 @@ Defaults:
 - Existing tasks/projects/tags for that user are wiped before seeding.
 
 Examples:
+
 - `go run ./cmd/seed -email qa@example.com -password supersecret -tasks 150`
 - `go run ./cmd/seed -wipe=false -tasks 40` (append more tasks instead of wiping)
 
