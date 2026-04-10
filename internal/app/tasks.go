@@ -125,6 +125,17 @@ func (s *TaskService) DailyActivity(ctx context.Context, userID uint64, days int
 	return s.Tasks.DailyActivity(ctx, s.Queries, userID, days)
 }
 
+func (s *TaskService) ExistingProjectNames(ctx context.Context, userID uint64) ([]string, error) {
+	if s.Projects == nil {
+		return nil, nil
+	}
+	return s.Projects.ListNames(ctx, s.Queries, userID)
+}
+
+func (s *TaskService) ExistingTagNames(ctx context.Context, userID uint64) ([]string, error) {
+	return s.Tasks.ListTagNames(ctx, s.Queries, userID)
+}
+
 func (s *TaskService) Get(ctx context.Context, userID, taskID uint64) (*domain.Task, error) {
 	return s.Tasks.Get(ctx, s.Queries, userID, taskID)
 }

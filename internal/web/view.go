@@ -93,5 +93,7 @@ type TaskFormView struct {
 	DueDate       string
 	Project       string
 	Tags          string
+	ProjectOptions []string
+	TagOptions     []string
 	IsEdit        bool
 }

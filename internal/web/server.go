@@ -598,6 +598,7 @@ func (s *Server) getTaskNew(w http.ResponseWriter, r *http.Request) {
 		Priority: domain.PriorityMedium.String(),
 	}
 	decorateTaskFormColors(&fv)
+	s.decorateTaskFormSuggestions(r.Context(), sess.User.ID, &fv)
 	s.render(w, tplFileTaskForm, PageData{
 		Title:  "New task",
 		User:   s.pageUser(sess),
@@ -612,24 +613,28 @@ func (s *Server) postTaskCreate(w http.ResponseWriter, r *http.Request) {
 	sess, _ := sessionFrom(r.Context())
 	tw, err := taskWriteFromForm(r)
 	if err != nil {
+		fv := taskFormFromRequest(r)
+		s.decorateTaskFormSuggestions(ctx, sess.User.ID, &fv)
 		s.render(w, tplFileTaskForm, PageData{
 			Title:  "New task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
 			Error:  friendlyError(err),
-			Data:   taskFormFromRequest(r),
+			Data:   fv,
 			Active: "tasks",
 		})
 		return
 	}
 	_, err = s.tasks.Create(ctx, sess.User.ID, tw)
 	if err != nil {
+		fv := taskFormFromRequest(r)
+		s.decorateTaskFormSuggestions(ctx, sess.User.ID, &fv)
 		s.render(w, tplFileTaskForm, PageData{
 			Title:  "New task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
 			Error:  friendlyError(err),
-			Data:   taskFormFromRequest(r),
+			Data:   fv,
 			Active: "tasks",
 		})
 		return
@@ -674,7 +679,7 @@ func (s *Server) handleTasksPath(w http.ResponseWriter, r *http.Request) {
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
 			CSRF:   sess.CSRFToken,
-			Data:   taskToFormView(t, true),
+			Data:   s.taskToFormViewWithSuggestions(ctx, sess.User.ID, t, true),
 			Active: "tasks",
 		})
 		return
@@ -788,6 +793,7 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fv := taskToFormView(t, true)
+		s.decorateTaskFormSuggestions(ctx, sess.User.ID, &fv)
 		s.render(w, tplFileTaskForm, PageData{
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
@@ -806,6 +812,7 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fv := taskToFormView(t, true)
+		s.decorateTaskFormSuggestions(ctx, sess.User.ID, &fv)
 		s.render(w, tplFileTaskForm, PageData{
 			Title:  "Edit task",
 			User:   s.pageUser(sess),
@@ -817,6 +824,27 @@ func (s *Server) handleTasksPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/tasks?flash=task_updated", http.StatusSeeOther)
+}
+
+func (s *Server) taskToFormViewWithSuggestions(ctx context.Context, userID uint64, t *domain.Task, edit bool) TaskFormView {
+	fv := taskToFormView(t, edit)
+	s.decorateTaskFormSuggestions(ctx, userID, &fv)
+	return fv
+}
+
+func (s *Server) decorateTaskFormSuggestions(ctx context.Context, userID uint64, fv *TaskFormView) {
+	projs, err := s.tasks.ExistingProjectNames(ctx, userID)
+	if err != nil {
+		s.log.Error("list project suggestions", "err", err)
+	} else {
+		fv.ProjectOptions = projs
+	}
+	tags, err := s.tasks.ExistingTagNames(ctx, userID)
+	if err != nil {
+		s.log.Error("list tag suggestions", "err", err)
+	} else {
+		fv.TagOptions = tags
+	}
 }
 
 // ListenAndServe is a thin wrapper for http.Server using this handler.

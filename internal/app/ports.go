@@ -25,6 +25,7 @@ type SessionRepository interface {
 
 type ProjectRepository interface {
 	Upsert(ctx context.Context, ex store.Executor, userID uint64, name string) (*domain.Project, error)
+	ListNames(ctx context.Context, ex store.Executor, userID uint64) ([]string, error)
 }
 
 type TaskRepository interface {
@@ -36,4 +37,5 @@ type TaskRepository interface {
 	StatsForUser(ctx context.Context, ex store.Executor, userID uint64) (domain.TaskStats, error)
 	DailyActivity(ctx context.Context, ex store.Executor, userID uint64, days int) ([]domain.DailyActivityPoint, error)
 	ReplaceTaskTags(ctx context.Context, ex store.Executor, userID, taskID uint64, names []string, defaultColor string) error
+	ListTagNames(ctx context.Context, ex store.Executor, userID uint64) ([]string, error)
 }

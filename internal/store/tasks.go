@@ -247,6 +247,33 @@ func (TaskRepository) DailyActivity(ctx context.Context, ex Executor, userID uin
 	return out, nil
 }
 
+func (TaskRepository) ListTagNames(ctx context.Context, ex Executor, userID uint64) ([]string, error) {
+	const q = `
+	SELECT name
+	FROM tags
+	WHERE user_id = $1
+	ORDER BY name ASC
+	`
+	rows, err := ex.QueryContext(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list tag names: %w", err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var n string
+		if err := rows.Scan(&n); err != nil {
+			return nil, err
+		}
+		names = append(names, n)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return names, nil
+}
+
 func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]domain.Task, error) {
 	if q.Limit <= 0 {
 		q.Limit = 100

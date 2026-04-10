@@ -58,11 +58,30 @@
 		<div class="row g-3">
 			<div class="col-md-6">
 				<label class="form-label fw-medium" for="project"><i class="bi bi-folder me-1"></i>Project</label>
-				<input class="form-control" id="project" name="project" value="{{$f.Project}}" placeholder="Optional category (created on save)">
+				<input class="form-control" id="project" name="project" value="{{$f.Project}}" placeholder="Optional category (created on save)" list="project-suggestions">
+				{{if $f.ProjectOptions}}
+				<datalist id="project-suggestions">
+					{{range $f.ProjectOptions}}<option value="{{.}}"></option>{{end}}
+				</datalist>
+				<div class="d-flex flex-wrap gap-1 mt-2">
+					{{range $f.ProjectOptions}}
+					<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 project-suggestion" data-project="{{.}}">{{.}}</button>
+					{{end}}
+				</div>
+				<div class="form-text"><i class="bi bi-lightbulb me-1"></i>Pick an existing project or type a new one.</div>
+				{{end}}
 			</div>
 			<div class="col-md-6">
 				<label class="form-label fw-medium" for="tags"><i class="bi bi-tags me-1"></i>Tags</label>
 				<input class="form-control" id="tags" name="tags" value="{{$f.Tags}}" placeholder="Comma-separated, e.g. work, home">
+				{{if $f.TagOptions}}
+				<div class="d-flex flex-wrap gap-1 mt-2">
+					{{range $f.TagOptions}}
+					<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 tag-suggestion" data-tag="{{.}}">{{.}}</button>
+					{{end}}
+				</div>
+				<div class="form-text"><i class="bi bi-cursor-fill me-1"></i>Click a tag to add it quickly.</div>
+				{{end}}
 			</div>
 		</div>
 	</div>
@@ -102,6 +121,35 @@
 	}
 	bindAccent('status', 'status-accent-box', 'status-badge', statusPalette, 'todo');
 	bindAccent('priority', 'priority-accent-box', 'priority-badge', priorityPalette, 'medium');
+	var projectInput = document.getElementById('project');
+	document.querySelectorAll('.project-suggestion').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			if (!projectInput) return;
+			var project = (btn.getAttribute('data-project') || '').trim();
+			if (!project) return;
+			projectInput.value = project;
+			projectInput.focus();
+		});
+	});
+	var tagsInput = document.getElementById('tags');
+	function parseTags(raw) {
+		return raw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+	}
+	function setTags(arr) {
+		tagsInput.value = arr.join(', ');
+	}
+	document.querySelectorAll('.tag-suggestion').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			if (!tagsInput) return;
+			var tag = (btn.getAttribute('data-tag') || '').trim();
+			if (!tag) return;
+			var current = parseTags(tagsInput.value);
+			if (current.some(function (v) { return v.toLowerCase() === tag.toLowerCase(); })) return;
+			current.push(tag);
+			setTags(current);
+			tagsInput.focus();
+		});
+	});
 })();
 </script>
 {{end}}

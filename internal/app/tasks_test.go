@@ -45,6 +45,10 @@ func (s *spyTaskRepo) ReplaceTaskTags(ctx context.Context, ex store.Executor, us
 	return nil
 }
 
+func (s *spyTaskRepo) ListTagNames(ctx context.Context, ex store.Executor, userID uint64) ([]string, error) {
+	return nil, nil
+}
+
 type noopTransactor struct{}
 
 func (noopTransactor) WithinTransaction(ctx context.Context, fn func(context.Context, store.Executor) error) error {
