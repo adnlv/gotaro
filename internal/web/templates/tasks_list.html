@@ -39,6 +39,17 @@
 	border: 1px solid rgba(0, 0, 0, 0.05);
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
+.stat-card-link {
+	color: inherit;
+	text-decoration: none;
+	display: block;
+	border-radius: 0.75rem;
+}
+.stat-card-link:hover .stat-card,
+.stat-card-link:focus-visible .stat-card {
+	border-color: rgba(59, 130, 246, 0.35);
+	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.14);
+}
 .stat-card .stat-value {
 	font-size: 1.35rem;
 	font-weight: 700;
@@ -114,27 +125,37 @@
 		<div class="row g-4 align-items-stretch">
 			<div class="col-lg-4 col-xl-3">
 				<div class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.65rem; letter-spacing: 0.07em;"><i class="bi bi-bar-chart me-1"></i>Overview</div>
-			<div class="stat-grid">
-				<div class="stat-card">
+				<div class="stat-grid">
+					<a class="stat-card-link" href="/tasks" aria-label="View all open tasks">
+						<div class="stat-card">
 						<div class="stat-value">{{$d.Stats.Total}}</div>
 						<div class="stat-label">Total</div>
 					</div>
-					<div class="stat-card">
+					</a>
+					<a class="stat-card-link" href="/tasks" aria-label="View open tasks">
+						<div class="stat-card">
 						<div class="stat-value text-primary">{{$d.Stats.Open}}</div>
 						<div class="stat-label">Open</div>
 					</div>
-					<div class="stat-card">
+					</a>
+					<a class="stat-card-link" href="/tasks/completed" aria-label="View completed tasks">
+						<div class="stat-card">
 						<div class="stat-value text-success">{{$d.Stats.Completed}}</div>
 						<div class="stat-label">Done</div>
 					</div>
-					<div class="stat-card">
+					</a>
+					<a class="stat-card-link" href="/tasks/archived" aria-label="View archived tasks">
+						<div class="stat-card">
 						<div class="stat-value">{{$d.Stats.Archived}}</div>
 						<div class="stat-label">Archived</div>
 					</div>
-					<div class="stat-card">
+					</a>
+					<a class="stat-card-link" href="/tasks?sort=due_date&dir=asc" aria-label="View overdue tasks">
+						<div class="stat-card">
 						<div class="stat-value {{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</div>
 						<div class="stat-label">Overdue</div>
 					</div>
+					</a>
 				</div>
 			</div>
 			<div class="col-lg-8 col-xl-9">

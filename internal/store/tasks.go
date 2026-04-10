@@ -344,9 +344,11 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 	}
 
 	orderCol := "t.created_at"
+	nullsLast := false
 	switch q.SortField {
 	case "due_date":
-		orderCol = "t.due_date NULLS LAST"
+		orderCol = "t.due_date"
+		nullsLast = true
 	case "priority":
 		orderCol = "t.priority"
 	case "status":
@@ -362,6 +364,9 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 	b.WriteString(orderCol)
 	b.WriteString(` `)
 	b.WriteString(dir)
+	if nullsLast {
+		b.WriteString(` NULLS LAST`)
+	}
 	b.WriteString(`, t.id `)
 	b.WriteString(dir)
 
