@@ -148,7 +148,7 @@ func (TaskRepository) StatsForUser(ctx context.Context, ex Executor, userID uint
 	SELECT
 		COUNT(*)::int,
 		COUNT(*) FILTER (WHERE archived_at IS NULL AND status <> $2)::int,
-		COUNT(*) FILTER (WHERE archived_at IS NULL AND status = $2)::int,
+		COUNT(*) FILTER (WHERE status = $2)::int,
 		COUNT(*) FILTER (WHERE archived_at IS NOT NULL)::int,
 		COUNT(*) FILTER (
 			WHERE archived_at IS NULL

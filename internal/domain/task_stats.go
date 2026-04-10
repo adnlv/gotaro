@@ -3,6 +3,7 @@ package domain
 import "time"
 
 // TaskStats aggregates per-user task counts for dashboards.
+// Completed includes all tasks with done status, including archived ones.
 type TaskStats struct {
 	Total     int
 	Open      int
