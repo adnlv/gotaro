@@ -1,0 +1,45 @@
+{{define "content"}}
+{{$f := .Data}}
+<h1 class="h3 mb-3">{{if $f.IsEdit}}Edit task{{else}}New task{{end}}</h1>
+<form method="post" action="{{if $f.IsEdit}}/tasks/{{$f.ID}}{{else}}/tasks{{end}}" class="card card-body shadow-sm">
+	<input type="hidden" name="csrf_token" value="{{.CSRF}}">
+	<div class="mb-3">
+		<label class="form-label" for="title">Title</label>
+		<input class="form-control" id="title" name="title" value="{{$f.Title}}" required>
+	</div>
+	<div class="mb-3">
+		<label class="form-label" for="description">Description</label>
+		<textarea class="form-control" id="description" name="description" rows="4">{{$f.Description}}</textarea>
+	</div>
+	<div class="row g-2">
+		<div class="col-md-4">
+			<label class="form-label" for="status">Status</label>
+			<select class="form-select" id="status" name="status">
+				<option value="todo" {{if eq $f.Status "todo"}}selected{{end}}>To do</option>
+				<option value="in_progress" {{if eq $f.Status "in_progress"}}selected{{end}}>In progress</option>
+				<option value="done" {{if eq $f.Status "done"}}selected{{end}}>Done</option>
+			</select>
+		</div>
+		<div class="col-md-4">
+			<label class="form-label" for="priority">Priority</label>
+			<select class="form-select" id="priority" name="priority">
+				<option value="low" {{if eq $f.Priority "low"}}selected{{end}}>Low</option>
+				<option value="medium" {{if eq $f.Priority "medium"}}selected{{end}}>Medium</option>
+				<option value="high" {{if eq $f.Priority "high"}}selected{{end}}>High</option>
+			</select>
+		</div>
+		<div class="col-md-4">
+			<label class="form-label" for="due_date">Due date</label>
+			<input class="form-control" type="date" id="due_date" name="due_date" value="{{$f.DueDate}}">
+		</div>
+	</div>
+	<div class="mb-3 mt-3">
+		<label class="form-label" for="tags">Tags</label>
+		<input class="form-control" id="tags" name="tags" value="{{$f.Tags}}" placeholder="comma-separated, e.g. work, home">
+	</div>
+	<div class="d-flex gap-2">
+		<button class="btn btn-primary" type="submit">Save</button>
+		<a class="btn btn-outline-secondary" href="/tasks">Cancel</a>
+	</div>
+</form>
+{{end}}
