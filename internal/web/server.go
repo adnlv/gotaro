@@ -476,6 +476,14 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		return
 	}
 
+	var activity []domain.DailyActivityPoint
+	act, err := s.tasks.DailyActivity(ctx, sess.User.ID, taskActivityChartDays)
+	if err != nil {
+		s.log.Error("daily activity", "err", err)
+	} else {
+		activity = act
+	}
+
 	hasMore := len(tasks) == limit
 	listPath := "open"
 	if archived {
@@ -512,6 +520,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		CompletedView: completed,
 		ArchivedView:  archived,
 		Stats:         stats,
+		ActivityChart: activityChartSVG(activity),
 		FiltersActive: taskListFiltersActive(r),
 		ListBasePath:  listBase,
 		ExportURL:     taskExportPath(r, completed, archived),

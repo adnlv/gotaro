@@ -22,6 +22,30 @@
 	.tasks-toolbar__toggle { justify-self: center; }
 	.tasks-toolbar__actions { justify-self: end; }
 }
+.task-summary-card {
+	border: 1px solid rgba(13, 110, 253, 0.1);
+	background: linear-gradient(155deg, #ffffff 0%, #f8faff 45%, #f0f4fc 100%);
+}
+.task-summary-pill {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.35rem;
+	padding: 0.35rem 0.85rem;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid rgba(0, 0, 0, 0.06);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	font-size: 0.78rem;
+	line-height: 1.2;
+}
+.task-summary-pill strong { font-size: 1.05rem; font-weight: 600; }
+.task-activity-wrap {
+	background: rgba(255, 255, 255, 0.75);
+	border-radius: 0.5rem;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	padding: 0.35rem 0.5rem 0.15rem;
+}
+.task-activity-svg { display: block; width: 100%; max-height: 150px; }
 </style>
 <div class="tasks-toolbar">
 	<div class="tasks-toolbar__title">
@@ -40,13 +64,32 @@
 	</div>
 </div>
 
-<div class="card card-body py-2 px-3 shadow-sm mb-3 d-flex flex-wrap align-items-center gap-3 small" aria-label="Task summary">
-	<span class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">Summary</span>
-	<span><span class="text-muted">Total</span> <strong>{{$d.Stats.Total}}</strong></span>
-	<span><span class="text-muted">Open</span> <strong>{{$d.Stats.Open}}</strong></span>
-	<span><span class="text-muted">Completed</span> <strong>{{$d.Stats.Completed}}</strong></span>
-	<span><span class="text-muted">Archived</span> <strong>{{$d.Stats.Archived}}</strong></span>
-	<span><span class="text-muted">Overdue</span> <strong class="{{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</strong></span>
+<div class="card task-summary-card shadow-sm mb-3 overflow-hidden" aria-label="Task summary">
+	<div class="card-body p-3 p-md-4">
+		<div class="row g-4 align-items-stretch">
+			<div class="col-lg-4 col-xl-3">
+				<div class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.65rem; letter-spacing: 0.07em;">Overview</div>
+				<div class="d-flex flex-wrap gap-2">
+					<span class="task-summary-pill"><span class="text-muted">Total</span> <strong>{{$d.Stats.Total}}</strong></span>
+					<span class="task-summary-pill"><span class="text-muted">Open</span> <strong class="text-primary">{{$d.Stats.Open}}</strong></span>
+					<span class="task-summary-pill"><span class="text-muted">Done</span> <strong class="text-success">{{$d.Stats.Completed}}</strong></span>
+					<span class="task-summary-pill"><span class="text-muted">Archived</span> <strong>{{$d.Stats.Archived}}</strong></span>
+					<span class="task-summary-pill"><span class="text-muted">Overdue</span> <strong class="{{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</strong></span>
+				</div>
+			</div>
+			<div class="col-lg-8 col-xl-9">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+					<span class="text-muted small">Blue = tasks <strong>created</strong> that day · Green = tasks marked <strong>done</strong> (by last update date, UTC)</span>
+					<span class="small text-nowrap"><span class="text-primary fw-bold">●</span> Created &nbsp; <span class="text-success fw-bold">●</span> Done</span>
+				</div>
+				{{if $d.ActivityChart}}
+				<div class="task-activity-wrap">{{$d.ActivityChart}}</div>
+				{{else}}
+				<p class="text-muted small mb-0 fst-italic">Chart could not be loaded.</p>
+				{{end}}
+			</div>
+		</div>
+	</div>
 </div>
 
 <form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.ArchivedView}}/tasks/archived{{else if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
