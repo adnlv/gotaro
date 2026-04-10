@@ -21,16 +21,16 @@
 		<textarea class="form-control" id="description" name="description" rows="4">{{$f.Description}}</textarea>
 	</div>
 	<div class="row g-2">
-		<div class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.StatusBG}}">
-			<label class="form-label d-flex align-items-center gap-2" for="status">Status <span class="badge rounded-pill" style="background-color: {{$f.StatusBG}}; color: {{$f.StatusFG}}">{{$f.StatusLabel}}</span></label>
+		<div id="status-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.StatusBG}}">
+			<label class="form-label d-flex align-items-center gap-2" for="status">Status <span id="status-badge" class="badge rounded-pill" style="background-color: {{$f.StatusBG}}; color: {{$f.StatusFG}}">{{$f.StatusLabel}}</span></label>
 			<select class="form-select" id="status" name="status">
 				<option value="todo" {{if eq $f.Status "todo"}}selected{{end}}>To do</option>
 				<option value="in_progress" {{if eq $f.Status "in_progress"}}selected{{end}}>In progress</option>
 				<option value="done" {{if eq $f.Status "done"}}selected{{end}}>Done</option>
 			</select>
 		</div>
-		<div class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.PriorityBG}}">
-			<label class="form-label d-flex align-items-center gap-2" for="priority">Priority <span class="badge rounded-pill" style="background-color: {{$f.PriorityBG}}; color: {{$f.PriorityFG}}">{{$f.PriorityLabel}}</span></label>
+		<div id="priority-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.PriorityBG}}">
+			<label class="form-label d-flex align-items-center gap-2" for="priority">Priority <span id="priority-badge" class="badge rounded-pill" style="background-color: {{$f.PriorityBG}}; color: {{$f.PriorityFG}}">{{$f.PriorityLabel}}</span></label>
 			<select class="form-select" id="priority" name="priority">
 				<option value="low" {{if eq $f.Priority "low"}}selected{{end}}>Low</option>
 				<option value="medium" {{if eq $f.Priority "medium"}}selected{{end}}>Medium</option>
@@ -51,4 +51,35 @@
 		<a class="btn btn-outline-secondary" href="/tasks">Cancel</a>
 	</div>
 </form>
+<script>
+(function () {
+	var statusPalette = {
+		todo: { label: 'To do', bg: '#6c757d', fg: '#ffffff' },
+		in_progress: { label: 'In progress', bg: '#0d6efd', fg: '#ffffff' },
+		done: { label: 'Done', bg: '#198754', fg: '#ffffff' }
+	};
+	var priorityPalette = {
+		low: { label: 'Low', bg: '#0aa2c0', fg: '#ffffff' },
+		medium: { label: 'Medium', bg: '#ffc107', fg: '#212529' },
+		high: { label: 'High', bg: '#dc3545', fg: '#ffffff' }
+	};
+	function bindAccent(selectId, boxId, badgeId, palette, fallbackKey) {
+		var sel = document.getElementById(selectId);
+		var box = document.getElementById(boxId);
+		var badge = document.getElementById(badgeId);
+		if (!sel || !box || !badge) return;
+		function sync() {
+			var p = palette[sel.value] || palette[fallbackKey];
+			box.style.borderLeft = '4px solid ' + p.bg;
+			badge.textContent = p.label;
+			badge.style.backgroundColor = p.bg;
+			badge.style.color = p.fg;
+		}
+		sel.addEventListener('change', sync);
+		sync();
+	}
+	bindAccent('status', 'status-accent-box', 'status-badge', statusPalette, 'todo');
+	bindAccent('priority', 'priority-accent-box', 'priority-badge', priorityPalette, 'medium');
+})();
+</script>
 {{end}}
