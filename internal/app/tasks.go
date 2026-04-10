@@ -121,10 +121,6 @@ func (s *TaskService) Stats(ctx context.Context, userID uint64) (domain.TaskStat
 	return s.Tasks.StatsForUser(ctx, s.Queries, userID)
 }
 
-func (s *TaskService) DailyActivity(ctx context.Context, userID uint64, days int) ([]domain.DailyActivityPoint, error) {
-	return s.Tasks.DailyActivity(ctx, s.Queries, userID, days)
-}
-
 func (s *TaskService) Get(ctx context.Context, userID, taskID uint64) (*domain.Task, error) {
 	return s.Tasks.Get(ctx, s.Queries, userID, taskID)
 }

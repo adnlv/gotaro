@@ -1,10 +1,6 @@
 package web
 
-import (
-	"html/template"
-
-	"github.com/adnlv/gotaro/internal/domain"
-)
+import "github.com/adnlv/gotaro/internal/domain"
 
 // PageData is passed to HTML templates (no password material).
 type PageData struct {
@@ -27,7 +23,6 @@ type TaskListView struct {
 	CompletedView bool
 	ArchivedView  bool
 	Stats         domain.TaskStats
-	ActivityChart template.HTML
 	FiltersActive bool
 	ListBasePath  string
 	ExportURL     string

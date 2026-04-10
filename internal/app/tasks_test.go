@@ -37,10 +37,6 @@ func (s *spyTaskRepo) StatsForUser(ctx context.Context, ex store.Executor, userI
 	return domain.TaskStats{}, nil
 }
 
-func (s *spyTaskRepo) DailyActivity(ctx context.Context, ex store.Executor, userID uint64, days int) ([]domain.DailyActivityPoint, error) {
-	return nil, nil
-}
-
 func (s *spyTaskRepo) ReplaceTaskTags(ctx context.Context, ex store.Executor, userID, taskID uint64, names []string, defaultColor string) error {
 	return nil
 }
