@@ -182,6 +182,20 @@ func flashMessage(code string) string {
 }
 
 // taskListFiltersActive is true when the user narrowed the list beyond the default tab (sort alone does not count).
+// taskExportPath builds the CSV export URL preserving list filters and tab (view=open|completed|archived).
+func taskExportPath(r *http.Request, completed, archived bool) string {
+	q := r.URL.Query()
+	q.Del("offset")
+	view := "open"
+	if archived {
+		view = "archived"
+	} else if completed {
+		view = "completed"
+	}
+	q.Set("view", view)
+	return "/tasks/export.csv?" + q.Encode()
+}
+
 func taskListFiltersActive(r *http.Request) bool {
 	q := r.URL.Query()
 	return strings.TrimSpace(q.Get("status")) != "" ||

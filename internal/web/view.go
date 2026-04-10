@@ -25,6 +25,7 @@ type TaskListView struct {
 	Stats         domain.TaskStats
 	FiltersActive bool
 	ListBasePath  string
+	ExportURL     string
 	Query         ListQueryView
 	SortField     string
 	SortDir       string

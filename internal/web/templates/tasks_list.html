@@ -34,7 +34,8 @@
 			<a href="/tasks/archived" class="btn btn-sm {{if $d.ArchivedView}}btn-primary{{else}}btn-outline-primary{{end}}">Archived</a>
 		</div>
 	</div>
-	<div class="tasks-toolbar__actions">
+	<div class="tasks-toolbar__actions d-flex flex-wrap gap-1 justify-content-end">
+		<a href="{{$d.ExportURL}}" class="btn btn-sm btn-outline-secondary">Export CSV</a>
 		<a href="/tasks/new" class="btn btn-sm btn-success">New task</a>
 	</div>
 </div>

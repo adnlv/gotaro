@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"embed"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"html/template"
@@ -105,6 +106,7 @@ func (s *Server) Handler() http.Handler {
 
 	mux.Handle("GET /tasks/completed", s.chain(http.HandlerFunc(s.getTasksCompleted), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("GET /tasks/archived", s.chain(http.HandlerFunc(s.getTasksArchived), s.requireAuth, s.sessionMiddleware))
+	mux.Handle("GET /tasks/export.csv", s.chain(http.HandlerFunc(s.getTasksExportCSV), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("GET /tasks/new", s.chain(http.HandlerFunc(s.getTaskNew), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("POST /tasks", s.chain(http.HandlerFunc(s.postTaskCreate), s.csrf, s.parseForm, s.requireAuth, s.sessionMiddleware))
 
@@ -329,6 +331,99 @@ func (s *Server) getTasksArchived(w http.ResponseWriter, r *http.Request) {
 	s.renderTaskList(w, r, false, true)
 }
 
+func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	sess, _ := sessionFrom(ctx)
+	q := r.URL.Query()
+	view := q.Get("view")
+	completed := view == "completed"
+	archived := view == "archived"
+
+	st, err := optionalStatus(q.Get("status"))
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	pr, err := optionalPriority(q.Get("priority"))
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	dueFrom, err := parseDatePtr(q.Get("due_from"))
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	dueTo, err := parseDatePtr(q.Get("due_to"))
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	params := app.TaskListParams{
+		UserID:        sess.User.ID,
+		CompletedView: completed,
+		ArchivedView:  archived,
+		Status:        st,
+		Priority:      pr,
+		Tag:           q.Get("tag"),
+		DueFrom:       dueFrom,
+		DueTo:         dueTo,
+		Search:        q.Get("q"),
+		SortField:     firstNonEmpty(q.Get("sort"), "created_at"),
+		SortDir:       firstNonEmpty(q.Get("dir"), "desc"),
+	}
+
+	tasks, err := s.tasks.ListAllMatching(ctx, params)
+	if err != nil {
+		s.log.Error("export tasks", "err", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="gotaro-tasks.csv"`)
+	cw := csv.NewWriter(w)
+	header := []string{"id", "title", "description", "status", "priority", "tags", "due_date", "archived_at", "created_at", "updated_at"}
+	if err := cw.Write(header); err != nil {
+		return
+	}
+	for _, t := range tasks {
+		desc := ""
+		if t.Description != nil {
+			desc = *t.Description
+		}
+		tagNames := make([]string, 0, len(t.Tags))
+		for _, tg := range t.Tags {
+			tagNames = append(tagNames, tg.Name)
+		}
+		due := ""
+		if t.DueDate != nil {
+			due = t.DueDate.UTC().Format(time.RFC3339)
+		}
+		arch := ""
+		if t.ArchivedAt != nil {
+			arch = t.ArchivedAt.UTC().Format(time.RFC3339)
+		}
+		row := []string{
+			strconv.FormatUint(t.ID, 10),
+			t.Title,
+			desc,
+			t.Status.String(),
+			t.Priority.String(),
+			strings.Join(tagNames, "; "),
+			due,
+			arch,
+			t.CreatedAt.UTC().Format(time.RFC3339),
+			t.UpdatedAt.UTC().Format(time.RFC3339),
+		}
+		if err := cw.Write(row); err != nil {
+			return
+		}
+	}
+	cw.Flush()
+}
+
 func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, completed, archived bool) {
 	ctx := r.Context()
 	sess, _ := sessionFrom(r.Context())
@@ -411,6 +506,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		Stats:         stats,
 		FiltersActive: taskListFiltersActive(r),
 		ListBasePath:  listBase,
+		ExportURL:     taskExportPath(r, completed, archived),
 		Query:         qv,
 		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
 		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
