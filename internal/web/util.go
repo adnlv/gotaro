@@ -79,12 +79,13 @@ func taskWriteFromForm(r *http.Request) (app.TaskWrite, error) {
 		return app.TaskWrite{}, err
 	}
 	return app.TaskWrite{
-		Title:       r.FormValue("title"),
-		Description: desc,
-		Status:      st,
-		Priority:    pr,
-		DueDate:     due,
-		TagNames:    tags,
+		Title:        r.FormValue("title"),
+		Description:  desc,
+		Status:       st,
+		Priority:     pr,
+		DueDate:      due,
+		TagNames:     tags,
+		ProjectName:  r.FormValue("project"),
 	}, nil
 }
 
@@ -201,6 +202,7 @@ func taskListFiltersActive(r *http.Request) bool {
 	return strings.TrimSpace(q.Get("status")) != "" ||
 		strings.TrimSpace(q.Get("priority")) != "" ||
 		strings.TrimSpace(q.Get("tag")) != "" ||
+		strings.TrimSpace(q.Get("project")) != "" ||
 		strings.TrimSpace(q.Get("due_from")) != "" ||
 		strings.TrimSpace(q.Get("due_to")) != "" ||
 		strings.TrimSpace(q.Get("q")) != ""

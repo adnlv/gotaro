@@ -367,6 +367,7 @@ func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 		Status:        st,
 		Priority:      pr,
 		Tag:           q.Get("tag"),
+		Project:       q.Get("project"),
 		DueFrom:       dueFrom,
 		DueTo:         dueTo,
 		Search:        q.Get("q"),
@@ -384,7 +385,7 @@ func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="gotaro-tasks.csv"`)
 	cw := csv.NewWriter(w)
-	header := []string{"id", "title", "description", "status", "priority", "tags", "due_date", "archived_at", "created_at", "updated_at"}
+	header := []string{"id", "title", "description", "status", "priority", "project", "tags", "due_date", "archived_at", "created_at", "updated_at"}
 	if err := cw.Write(header); err != nil {
 		return
 	}
@@ -396,6 +397,10 @@ func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 		tagNames := make([]string, 0, len(t.Tags))
 		for _, tg := range t.Tags {
 			tagNames = append(tagNames, tg.Name)
+		}
+		proj := ""
+		if t.Project != nil {
+			proj = t.Project.Name
 		}
 		due := ""
 		if t.DueDate != nil {
@@ -411,6 +416,7 @@ func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 			desc,
 			t.Status.String(),
 			t.Priority.String(),
+			proj,
 			strings.Join(tagNames, "; "),
 			due,
 			arch,
@@ -446,6 +452,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		Status:        st,
 		Priority:      pr,
 		Tag:           r.URL.Query().Get("tag"),
+		Project:       r.URL.Query().Get("project"),
 		DueFrom:       dueFrom,
 		DueTo:         dueTo,
 		Search:        r.URL.Query().Get("q"),
@@ -488,6 +495,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		Status:   r.URL.Query().Get("status"),
 		Priority: r.URL.Query().Get("priority"),
 		Tag:      r.URL.Query().Get("tag"),
+		Project:  r.URL.Query().Get("project"),
 		DueFrom:  r.URL.Query().Get("due_from"),
 		DueTo:    r.URL.Query().Get("due_to"),
 		Search:   r.URL.Query().Get("q"),
@@ -559,6 +567,9 @@ func taskRows(tasks []domain.Task, now time.Time) []TaskRow {
 			row.DueDate = formatTaskDue(*t.DueDate, now)
 		}
 		row.Overdue = t.IsOverdue(now)
+		if t.Project != nil {
+			row.Project = t.Project.Name
+		}
 		for _, tg := range t.Tags {
 			c := strings.TrimSpace(tg.Color)
 			if c == "" {
@@ -624,6 +635,7 @@ func taskFormFromRequest(r *http.Request) TaskFormView {
 		Status:      r.FormValue("status"),
 		Priority:    r.FormValue("priority"),
 		DueDate:     r.FormValue("due_date"),
+		Project:     r.FormValue("project"),
 		Tags:        r.FormValue("tags"),
 	}
 	decorateTaskFormColors(&fv)
@@ -681,6 +693,9 @@ func taskToFormView(t *domain.Task, edit bool) TaskFormView {
 		names = append(names, tg.Name)
 	}
 	fv.Tags = strings.Join(names, ", ")
+	if t.Project != nil {
+		fv.Project = t.Project.Name
+	}
 	decorateTaskFormColors(&fv)
 	return fv
 }

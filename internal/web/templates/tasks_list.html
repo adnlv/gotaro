@@ -87,6 +87,10 @@
 		</div>
 	</div>
 	<div class="row g-2 align-items-end mt-2">
+		<div class="col-md-2">
+			<label class="form-label small mb-0">Project</label>
+			<input class="form-control form-control-sm" name="project" value="{{$d.Query.Project}}" placeholder="Exact name">
+		</div>
 		<div class="col-md-3">
 			<label class="form-label small mb-0">Sort by</label>
 			<select class="form-select form-select-sm" name="sort">
@@ -130,7 +134,7 @@
 	form.querySelectorAll('input[type="date"]').forEach(function (el) {
 		el.addEventListener('change', submitNow);
 	});
-	['tag', 'q'].forEach(function (name) {
+	['tag', 'project', 'q'].forEach(function (name) {
 		var el = form.querySelector('input[name="' + name + '"]');
 		if (!el) return;
 		el.addEventListener('input', debounced);
@@ -184,6 +188,7 @@
 					{{end}}
 				</div>
 				{{if .Description}}<p class="mb-1 small">{{.Description}}</p>{{end}}
+				{{if .Project}}<div class="small text-muted mb-1">Project: <span class="text-body">{{.Project}}</span></div>{{end}}
 				{{if .Tags}}
 				<div class="d-flex flex-wrap gap-1 mt-1">
 					{{range .Tags}}

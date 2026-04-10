@@ -45,6 +45,7 @@ type ListQueryView struct {
 	DueFrom          string
 	DueTo            string
 	Search           string
+	Project          string
 }
 
 type TaskRow struct {
@@ -62,6 +63,7 @@ type TaskRow struct {
 	CreatedAt     string
 	DueDate       string
 	Overdue       bool
+	Project       string
 	Tags          []TagRow
 }
 
@@ -84,6 +86,7 @@ type TaskFormView struct {
 	PriorityBG    string
 	PriorityFG    string
 	DueDate       string
+	Project       string
 	Tags          string
 	IsEdit        bool
 }
