@@ -38,7 +38,7 @@
 	</div>
 </div>
 
-<form class="card card-body shadow-sm mb-3" method="get" action="{{if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
+<form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
 	<div class="row g-2">
 		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.StatusAccentBG}}style="border-left: 4px solid {{$d.Query.StatusAccentBG}}"{{end}}>
 			<label class="form-label small mb-0">Status</label>
@@ -93,10 +93,42 @@
 			</select>
 		</div>
 		<div class="col-md-2">
-			<button class="btn btn-sm btn-outline-primary w-100" type="submit">Apply</button>
+			<button id="task-filters-apply" class="btn btn-sm btn-outline-primary w-100" type="submit">Apply</button>
 		</div>
 	</div>
 </form>
+<script>
+(function () {
+	var form = document.getElementById('task-filters');
+	if (!form) return;
+	var debounceTimer;
+	function submitNow() {
+		if (form.requestSubmit) {
+			form.requestSubmit();
+		} else {
+			form.submit();
+		}
+	}
+	function debounced() {
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(submitNow, 350);
+	}
+	form.querySelectorAll('select').forEach(function (el) {
+		el.addEventListener('change', submitNow);
+	});
+	form.querySelectorAll('input[type="date"]').forEach(function (el) {
+		el.addEventListener('change', submitNow);
+	});
+	['tag', 'q'].forEach(function (name) {
+		var el = form.querySelector('input[name="' + name + '"]');
+		if (!el) return;
+		el.addEventListener('input', debounced);
+		el.addEventListener('change', submitNow);
+	});
+	var apply = document.getElementById('task-filters-apply');
+	if (apply) apply.classList.add('d-none');
+})();
+</script>
 
 {{if not $d.Tasks}}
 <p class="text-muted">No tasks match your filters.</p>
@@ -107,11 +139,22 @@
 		<div class="d-flex justify-content-between align-items-start gap-2">
 			<div>
 				<a href="/tasks/{{.ID}}/edit" class="fw-semibold text-decoration-none">{{.Title}}</a>
-				<div class="small text-muted d-flex flex-wrap align-items-center gap-1">
-					<span>Created {{.CreatedAt}}{{if .DueDate}} · <span {{if .Overdue}}class="text-danger fw-semibold"{{end}}>Due {{.DueDate}}</span>{{end}}</span>
-					{{if .Overdue}}<span class="badge rounded-pill bg-danger">Overdue</span>{{end}}
-					<span class="badge rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
-					<span class="badge rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
+				<div class="small text-muted">
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+						<div>Created {{.CreatedAt}}</div>
+						<div class="d-flex flex-wrap align-items-center gap-1">
+							<span class="badge rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
+							<span class="badge rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
+						</div>
+					</div>
+					{{if .DueDate}}
+					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-1">
+						<div class="{{if .Overdue}}text-danger fw-semibold{{end}}">Due {{.DueDate}}</div>
+						<div>
+							{{if .Overdue}}<span class="badge rounded-pill bg-danger">Overdue</span>{{end}}
+						</div>
+					</div>
+					{{end}}
 				</div>
 				{{if .Description}}<p class="mb-1 small">{{.Description}}</p>{{end}}
 				{{if .Tags}}

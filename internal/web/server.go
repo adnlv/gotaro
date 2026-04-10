@@ -425,13 +425,13 @@ func taskRows(tasks []domain.Task, now time.Time) []TaskRow {
 			PriorityLabel: pl,
 			PriorityBG:    pbg,
 			PriorityFG:    pfg,
-			CreatedAt:     t.CreatedAt.UTC().Format("2006-01-02 15:04"),
+			CreatedAt:     formatTaskCreated(t.CreatedAt),
 		}
 		if t.Description != nil {
 			row.Description = *t.Description
 		}
 		if t.DueDate != nil {
-			row.DueDate = t.DueDate.UTC().Format("2006-01-02")
+			row.DueDate = formatTaskDue(*t.DueDate, now)
 		}
 		row.Overdue = t.IsOverdue(now)
 		for _, tg := range t.Tags {
