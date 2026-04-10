@@ -45,7 +45,7 @@ func TestHandler_tasksRequiresLogin(t *testing.T) {
 func TestTaskExportPath_preservesFiltersAndView(t *testing.T) {
 	t.Parallel()
 	r := httptest.NewRequest(http.MethodGet, "/tasks/completed?status=todo&q=hello&offset=25", nil)
-	got := taskExportPath(r, true, false)
+	got := taskExportPath(r, "completed")
 	u, err := url.Parse(got)
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +54,7 @@ func TestTaskExportPath_preservesFiltersAndView(t *testing.T) {
 		t.Fatalf("path: %q", u.Path)
 	}
 	q := u.Query()
-	if q.Get("view") != "completed" || q.Get("q") != "hello" || q.Get("status") != "todo" {
+	if q.Get("scope") != "completed" || q.Get("q") != "hello" || q.Get("status") != "todo" {
 		t.Fatalf("query: %v", q)
 	}
 	if q.Get("offset") != "" {

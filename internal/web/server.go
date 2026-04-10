@@ -104,8 +104,6 @@ func (s *Server) Handler() http.Handler {
 
 	mux.Handle("POST /logout", s.chain(http.HandlerFunc(s.postLogout), s.csrf, s.parseForm, s.requireAuth, s.sessionMiddleware))
 
-	mux.Handle("GET /tasks/completed", s.chain(http.HandlerFunc(s.getTasksCompleted), s.requireAuth, s.sessionMiddleware))
-	mux.Handle("GET /tasks/archived", s.chain(http.HandlerFunc(s.getTasksArchived), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("GET /tasks/export.csv", s.chain(http.HandlerFunc(s.getTasksExportCSV), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("GET /tasks/new", s.chain(http.HandlerFunc(s.getTaskNew), s.requireAuth, s.sessionMiddleware))
 	mux.Handle("POST /tasks", s.chain(http.HandlerFunc(s.postTaskCreate), s.csrf, s.parseForm, s.requireAuth, s.sessionMiddleware))
@@ -320,24 +318,19 @@ func (s *Server) postLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getTasksOpen(w http.ResponseWriter, r *http.Request) {
-	s.renderTaskList(w, r, false, false)
-}
-
-func (s *Server) getTasksCompleted(w http.ResponseWriter, r *http.Request) {
-	s.renderTaskList(w, r, true, false)
-}
-
-func (s *Server) getTasksArchived(w http.ResponseWriter, r *http.Request) {
-	s.renderTaskList(w, r, false, true)
+	s.renderTaskList(w, r)
 }
 
 func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	sess, _ := sessionFrom(ctx)
 	q := r.URL.Query()
-	view := q.Get("view")
-	completed := view == "completed"
-	archived := view == "archived"
+	scope := taskScopeFromQuery(q.Get("scope"))
+	if scope == "open" {
+		scope = taskScopeFromQuery(q.Get("view")) // backward-friendly export links
+	}
+	completed := scope == "completed"
+	archived := scope == "archived"
 
 	st, err := optionalStatus(q.Get("status"))
 	if err != nil {
@@ -430,9 +423,12 @@ func (s *Server) getTasksExportCSV(w http.ResponseWriter, r *http.Request) {
 	cw.Flush()
 }
 
-func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, completed, archived bool) {
+func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	sess, _ := sessionFrom(r.Context())
+	scope := taskScopeFromQuery(r.URL.Query().Get("scope"))
+	completed := scope == "completed"
+	archived := scope == "archived"
 
 	st, _ := optionalStatus(r.URL.Query().Get("status"))
 	pr, _ := optionalPriority(r.URL.Query().Get("priority"))
@@ -485,19 +481,8 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	}
 
 	hasMore := len(tasks) == limit
-	listPath := "open"
-	if archived {
-		listPath = "archived"
-	} else if completed {
-		listPath = "completed"
-	}
 	listBase := "/tasks"
-	if archived {
-		listBase = "/tasks/archived"
-	} else if completed {
-		listBase = "/tasks/completed"
-	}
-	prev, next, hasPrev, hasNext := paginationLinks(r, listPath, limit, offset, hasMore)
+	prev, next, hasPrev, hasNext := paginationLinks(r, limit, offset, hasMore)
 
 	qv := ListQueryView{
 		Status:   r.URL.Query().Get("status"),
@@ -531,7 +516,7 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		ActivityChart:  activityChartSVG(activity),
 		FiltersActive:  taskListFiltersActive(r),
 		ListBasePath:   listBase,
-		ExportURL:      taskExportPath(r, completed, archived),
+		ExportURL:      taskExportPath(r, scope),
 		Query:          qv,
 		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
 		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),

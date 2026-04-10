@@ -70,10 +70,6 @@ func (s *TaskService) taskStoreQuery(p TaskListParams, limit, offset int) (store
 		Offset:        offset,
 		Limit:         limit,
 	}
-	if p.Status != nil {
-		q.OpenOnly = false
-		q.CompletedOnly = false
-	}
 	return q, nil
 }
 

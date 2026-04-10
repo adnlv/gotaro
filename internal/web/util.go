@@ -101,17 +101,8 @@ func intQuery(r *http.Request, key string, def int) int {
 	return n
 }
 
-// listPath is "open", "completed", or "archived".
-func paginationLinks(r *http.Request, listPath string, limit, offset int, hasMore bool) (prev, next string, hasPrev, hasNext bool) {
-	var base string
-	switch listPath {
-	case "completed":
-		base = "/tasks/completed"
-	case "archived":
-		base = "/tasks/archived"
-	default:
-		base = "/tasks"
-	}
+func paginationLinks(r *http.Request, limit, offset int, hasMore bool) (prev, next string, hasPrev, hasNext bool) {
+	base := "/tasks"
 	q := r.URL.Query()
 	sort := q.Get("sort")
 	if sort == "" {
@@ -184,17 +175,22 @@ func flashMessage(code string) string {
 
 // taskListFiltersActive is true when the user narrowed the list beyond the default tab (sort alone does not count).
 // taskExportPath builds the CSV export URL preserving list filters and tab (view=open|completed|archived).
-func taskExportPath(r *http.Request, completed, archived bool) string {
+func taskExportPath(r *http.Request, scope string) string {
 	q := r.URL.Query()
 	q.Del("offset")
-	view := "open"
-	if archived {
-		view = "archived"
-	} else if completed {
-		view = "completed"
-	}
-	q.Set("view", view)
+	q.Set("scope", taskScopeFromQuery(scope))
 	return "/tasks/export.csv?" + q.Encode()
+}
+
+func taskScopeFromQuery(raw string) string {
+	switch strings.TrimSpace(strings.ToLower(raw)) {
+	case "completed":
+		return "completed"
+	case "archived":
+		return "archived"
+	default:
+		return "open"
+	}
 }
 
 func taskListFiltersActive(r *http.Request) bool {
