@@ -1,0 +1,9 @@
+# Development image: runs Air to rebuild/restart the app on file changes.
+FROM golang:1.25-bookworm
+WORKDIR /src
+
+RUN go install github.com/air-verse/air@latest
+ENV PATH="/go/bin:${PATH}"
+
+EXPOSE 8080
+CMD ["air", "-c", ".air.toml"]

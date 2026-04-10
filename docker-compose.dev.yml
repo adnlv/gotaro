@@ -1,0 +1,10 @@
+# Merge with the base file for live reload:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Or: make dev-docker
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/src

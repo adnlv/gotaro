@@ -1,0 +1,32 @@
+# Production-style image (restart manually after code changes).
+# Live reload: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# or: make dev-docker
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gotaro
+      POSTGRES_PASSWORD: gotaro
+      POSTGRES_DB: gotaro
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gotaro -d gotaro"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://gotaro:gotaro@db:5432/gotaro?sslmode=disable
+      LISTEN_ADDR: ":8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,12 +1,18 @@
 {{define "content"}}
 {{$d := .Data}}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-	<h1 class="h3 mb-0">{{if $d.CompletedView}}Completed tasks{{else}}Open tasks{{end}}</h1>
-	<div class="btn-group">
-		<a href="/tasks" class="btn btn-sm {{if not $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Open</a>
-		<a href="/tasks/completed" class="btn btn-sm {{if $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Completed</a>
+<div class="d-flex align-items-center gap-2 mb-3">
+	<div class="flex-grow-1 text-start min-w-0">
+		<h1 class="h3 mb-0">{{if $d.CompletedView}}Completed tasks{{else}}Open tasks{{end}}</h1>
 	</div>
-	<a href="/tasks/new" class="btn btn-sm btn-success">New task</a>
+	<div class="flex-shrink-0">
+		<div class="btn-group" role="group" aria-label="Task list view">
+			<a href="/tasks" class="btn btn-sm {{if not $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Open</a>
+			<a href="/tasks/completed" class="btn btn-sm {{if $d.CompletedView}}btn-primary{{else}}btn-outline-primary{{end}}">Completed</a>
+		</div>
+	</div>
+	<div class="flex-grow-1 d-flex justify-content-end">
+		<a href="/tasks/new" class="btn btn-sm btn-success">New task</a>
+	</div>
 </div>
 
 <form class="card card-body shadow-sm mb-3" method="get" action="{{if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
