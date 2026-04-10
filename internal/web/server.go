@@ -516,12 +516,12 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		ListBasePath:  listBase,
 		ExportURL:     taskExportPath(r, completed, archived),
 		Query:         qv,
-		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
-		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
-		HasPrev:        hasPrev,
-		HasNext:        hasNext,
-		PrevLink:       prev,
-		NextLink:       next,
+		SortField:     firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
+		SortDir:       firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
+		HasPrev:       hasPrev,
+		HasNext:       hasNext,
+		PrevLink:      prev,
+		NextLink:      next,
 	}
 
 	s.render(w, tplFileTasksList, PageData{

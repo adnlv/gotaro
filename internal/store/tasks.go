@@ -258,7 +258,7 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 		b.WriteString(` AND (t.title ILIKE $`)
 		b.WriteString(fmt.Sprint(arg))
 		b.WriteString(` OR t.description ILIKE $`)
-		b.WriteString(fmt.Sprint(arg+1))
+		b.WriteString(fmt.Sprint(arg + 1))
 		b.WriteString(`)`)
 		args = append(args, pat, pat)
 		arg += 2

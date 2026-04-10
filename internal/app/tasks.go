@@ -22,17 +22,17 @@ type TaskListParams struct {
 
 	CompletedView bool
 	ArchivedView  bool
-	Status          *domain.Status
-	Priority        *domain.Priority
-	Tag             string
-	Project         string
-	DueFrom         *time.Time
-	DueTo           *time.Time
-	Search          string
-	SortField       string
-	SortDir         string
-	Offset          int
-	Limit           int
+	Status        *domain.Status
+	Priority      *domain.Priority
+	Tag           string
+	Project       string
+	DueFrom       *time.Time
+	DueTo         *time.Time
+	Search        string
+	SortField     string
+	SortDir       string
+	Offset        int
+	Limit         int
 }
 
 func (s *TaskService) taskStoreQuery(p TaskListParams, limit, offset int) (store.TaskQuery, error) {
@@ -136,13 +136,13 @@ func (s *TaskService) resolveProject(ctx context.Context, ex store.Executor, use
 }
 
 type TaskWrite struct {
-	Title        string
-	Description  *string
-	Status       domain.Status
-	Priority     domain.Priority
-	DueDate      *time.Time
-	TagNames     []string
-	ProjectName  string
+	Title       string
+	Description *string
+	Status      domain.Status
+	Priority    domain.Priority
+	DueDate     *time.Time
+	TagNames    []string
+	ProjectName string
 }
 
 func (s *TaskService) Create(ctx context.Context, userID uint64, w TaskWrite) (*domain.Task, error) {

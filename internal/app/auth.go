@@ -118,13 +118,13 @@ func newSession(user *domain.User, clientIP, userAgent string, now time.Time) (*
 		return nil, fmt.Errorf("csrf token: %w", err)
 	}
 	return &domain.Session{
-		Token:      tok.String(),
-		CSRFToken:  csrf.String(),
-		User:       user,
-		ClientIP:   clientIP,
-		UserAgent:  userAgent,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-		ExpiresAt:  now.Add(sessionTTL),
+		Token:     tok.String(),
+		CSRFToken: csrf.String(),
+		User:      user,
+		ClientIP:  clientIP,
+		UserAgent: userAgent,
+		CreatedAt: now,
+		UpdatedAt: now,
+		ExpiresAt: now.Add(sessionTTL),
 	}, nil
 }

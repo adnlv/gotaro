@@ -79,13 +79,13 @@ func taskWriteFromForm(r *http.Request) (app.TaskWrite, error) {
 		return app.TaskWrite{}, err
 	}
 	return app.TaskWrite{
-		Title:        r.FormValue("title"),
-		Description:  desc,
-		Status:       st,
-		Priority:     pr,
-		DueDate:      due,
-		TagNames:     tags,
-		ProjectName:  r.FormValue("project"),
+		Title:       r.FormValue("title"),
+		Description: desc,
+		Status:      st,
+		Priority:    pr,
+		DueDate:     due,
+		TagNames:    tags,
+		ProjectName: r.FormValue("project"),
 	}, nil
 }
 
