@@ -23,6 +23,10 @@ type SessionRepository interface {
 	GetValidByToken(ctx context.Context, ex store.Executor, token string) (*domain.Session, error)
 }
 
+type ProjectRepository interface {
+	Upsert(ctx context.Context, ex store.Executor, userID uint64, name string) (*domain.Project, error)
+}
+
 type TaskRepository interface {
 	Insert(ctx context.Context, ex store.Executor, t *domain.Task) error
 	Update(ctx context.Context, ex store.Executor, t *domain.Task) error

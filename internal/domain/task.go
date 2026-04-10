@@ -23,6 +23,7 @@ type Task struct {
 	UserID      uint64
 	Title       string
 	Description *string
+	Project     *Project
 	Tags        []Tag
 	Status      Status
 	Priority    Priority

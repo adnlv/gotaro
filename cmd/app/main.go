@@ -49,9 +49,10 @@ func main() {
 		Hasher:   app.BcryptHasher{},
 	}
 	taskSvc := &app.TaskService{
-		Queries: db,
-		Tx:      pool,
-		Tasks:   store.TaskRepository{},
+		Queries:  db,
+		Tx:       pool,
+		Tasks:    store.TaskRepository{},
+		Projects: store.ProjectRepository{},
 	}
 
 	secure := os.Getenv("GOTARO_COOKIE_SECURE") == "true"

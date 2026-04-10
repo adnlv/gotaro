@@ -24,6 +24,7 @@ type TaskQuery struct {
 	DueFrom  *time.Time
 	DueTo    *time.Time
 	Search   string
+	Project  string
 
 	SortField string
 	SortDir   string
@@ -36,8 +37,8 @@ type TaskRepository struct{}
 
 func (TaskRepository) Insert(ctx context.Context, ex Executor, t *domain.Task) error {
 	const q = `
-	INSERT INTO tasks (user_id, title, description, status, priority, created_at, updated_at, archived_at, due_date)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	INSERT INTO tasks (user_id, title, description, status, priority, created_at, updated_at, archived_at, due_date, project_id)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING id
 	`
 	if err := ex.QueryRowContext(ctx, q,
@@ -50,6 +51,7 @@ func (TaskRepository) Insert(ctx context.Context, ex Executor, t *domain.Task) e
 		t.UpdatedAt,
 		nullableTime(t.ArchivedAt),
 		nullableTime(t.DueDate),
+		projectFK(t.Project),
 	).Scan(&t.ID); err != nil {
 		return fmt.Errorf("insert task: %w", err)
 	}
@@ -59,8 +61,8 @@ func (TaskRepository) Insert(ctx context.Context, ex Executor, t *domain.Task) e
 func (TaskRepository) Update(ctx context.Context, ex Executor, t *domain.Task) error {
 	const q = `
 	UPDATE tasks
-	SET title = $1, description = $2, status = $3, priority = $4, updated_at = $5, archived_at = $6, due_date = $7
-	WHERE id = $8 AND user_id = $9
+	SET title = $1, description = $2, status = $3, priority = $4, updated_at = $5, archived_at = $6, due_date = $7, project_id = $8
+	WHERE id = $9 AND user_id = $10
 	`
 	res, err := ex.ExecContext(ctx, q,
 		t.Title,
@@ -70,6 +72,7 @@ func (TaskRepository) Update(ctx context.Context, ex Executor, t *domain.Task) e
 		t.UpdatedAt,
 		nullableTime(t.ArchivedAt),
 		nullableTime(t.DueDate),
+		projectFK(t.Project),
 		t.ID,
 		t.UserID,
 	)
@@ -104,16 +107,21 @@ func (TaskRepository) Delete(ctx context.Context, ex Executor, userID, taskID ui
 
 func (TaskRepository) Get(ctx context.Context, ex Executor, userID, taskID uint64) (*domain.Task, error) {
 	const q = `
-	SELECT id, user_id, title, description, status, priority, created_at, updated_at, archived_at, due_date
-	FROM tasks
-	WHERE id = $1 AND user_id = $2
+	SELECT t.id, t.user_id, t.title, t.description, t.status, t.priority, t.created_at, t.updated_at, t.archived_at, t.due_date,
+	       p.id, p.name
+	FROM tasks t
+	LEFT JOIN projects p ON p.id = t.project_id AND p.user_id = t.user_id
+	WHERE t.id = $1 AND t.user_id = $2
 	`
 	var t domain.Task
 	var desc sql.NullString
 	var archived, due sql.NullTime
+	var pid sql.NullInt64
+	var pname sql.NullString
 	if err := ex.QueryRowContext(ctx, q, taskID, userID).Scan(
 		&t.ID, &t.UserID, &t.Title, &desc, &t.Status, &t.Priority,
 		&t.CreatedAt, &t.UpdatedAt, &archived, &due,
+		&pid, &pname,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrNotFound
@@ -123,6 +131,7 @@ func (TaskRepository) Get(ctx context.Context, ex Executor, userID, taskID uint6
 	t.Description = nullStringToPtr(desc)
 	t.ArchivedAt = nullTimeToPtr(archived)
 	t.DueDate = nullTimeToPtr(due)
+	t.Project = scanProject(pid, pname, userID)
 
 	tags, err := loadTagsForTask(ctx, ex, t.ID)
 	if err != nil {
@@ -170,8 +179,10 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 	var b strings.Builder
 	b.WriteString(`
 	SELECT DISTINCT t.id, t.user_id, t.title, t.description, t.status, t.priority,
-	       t.created_at, t.updated_at, t.archived_at, t.due_date
+	       t.created_at, t.updated_at, t.archived_at, t.due_date,
+	       p.id, p.name
 	FROM tasks t
+	LEFT JOIN projects p ON p.id = t.project_id AND p.user_id = t.user_id
 	`)
 	args := []any{}
 	arg := 1
@@ -222,6 +233,12 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 		b.WriteString(` AND tg.name = $`)
 		b.WriteString(fmt.Sprint(arg))
 		args = append(args, domain.NormalizeTagName(tag))
+		arg++
+	}
+	if proj := strings.TrimSpace(q.Project); proj != "" {
+		b.WriteString(` AND p.name = $`)
+		b.WriteString(fmt.Sprint(arg))
+		args = append(args, domain.NormalizeProjectName(proj))
 		arg++
 	}
 	if q.DueFrom != nil {
@@ -290,15 +307,19 @@ func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]dom
 		var t domain.Task
 		var desc sql.NullString
 		var archived, due sql.NullTime
+		var pid sql.NullInt64
+		var pname sql.NullString
 		if err := rows.Scan(
 			&t.ID, &t.UserID, &t.Title, &desc, &t.Status, &t.Priority,
 			&t.CreatedAt, &t.UpdatedAt, &archived, &due,
+			&pid, &pname,
 		); err != nil {
 			return nil, err
 		}
 		t.Description = nullStringToPtr(desc)
 		t.ArchivedAt = nullTimeToPtr(archived)
 		t.DueDate = nullTimeToPtr(due)
+		t.Project = scanProject(pid, pname, q.UserID)
 		t.Tags = nil
 		tasks = append(tasks, t)
 		ids = append(ids, t.ID)

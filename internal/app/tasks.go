@@ -11,9 +11,10 @@ import (
 )
 
 type TaskService struct {
-	Queries store.Executor
-	Tx      Transactor
-	Tasks   TaskRepository
+	Queries  store.Executor
+	Tx       Transactor
+	Tasks    TaskRepository
+	Projects ProjectRepository
 }
 
 type TaskListParams struct {
@@ -24,6 +25,7 @@ type TaskListParams struct {
 	Status          *domain.Status
 	Priority        *domain.Priority
 	Tag             string
+	Project         string
 	DueFrom         *time.Time
 	DueTo           *time.Time
 	Search          string
@@ -59,6 +61,7 @@ func (s *TaskService) taskStoreQuery(p TaskListParams, limit, offset int) (store
 		Status:        p.Status,
 		Priority:      p.Priority,
 		Tag:           p.Tag,
+		Project:       p.Project,
 		DueFrom:       p.DueFrom,
 		DueTo:         p.DueTo,
 		Search:        p.Search,
@@ -122,13 +125,24 @@ func (s *TaskService) Get(ctx context.Context, userID, taskID uint64) (*domain.T
 	return s.Tasks.Get(ctx, s.Queries, userID, taskID)
 }
 
+func (s *TaskService) resolveProject(ctx context.Context, ex store.Executor, userID uint64, name string) (*domain.Project, error) {
+	if domain.NormalizeProjectName(name) == "" {
+		return nil, nil
+	}
+	if s.Projects == nil {
+		return nil, errors.New("project repository not configured")
+	}
+	return s.Projects.Upsert(ctx, ex, userID, name)
+}
+
 type TaskWrite struct {
-	Title       string
-	Description *string
-	Status      domain.Status
-	Priority    domain.Priority
-	DueDate     *time.Time
-	TagNames    []string
+	Title        string
+	Description  *string
+	Status       domain.Status
+	Priority     domain.Priority
+	DueDate      *time.Time
+	TagNames     []string
+	ProjectName  string
 }
 
 func (s *TaskService) Create(ctx context.Context, userID uint64, w TaskWrite) (*domain.Task, error) {
@@ -150,6 +164,11 @@ func (s *TaskService) Create(ctx context.Context, userID uint64, w TaskWrite) (*
 
 	var created *domain.Task
 	err := s.Tx.WithinTransaction(ctx, func(ctx context.Context, ex store.Executor) error {
+		proj, err := s.resolveProject(ctx, ex, userID, w.ProjectName)
+		if err != nil {
+			return err
+		}
+		t.Project = proj
 		if err := s.Tasks.Insert(ctx, ex, t); err != nil {
 			return err
 		}
@@ -189,6 +208,11 @@ func (s *TaskService) Update(ctx context.Context, userID, taskID uint64, w TaskW
 	}
 
 	err = s.Tx.WithinTransaction(ctx, func(ctx context.Context, ex store.Executor) error {
+		proj, err := s.resolveProject(ctx, ex, userID, w.ProjectName)
+		if err != nil {
+			return err
+		}
+		t.Project = proj
 		if err := s.Tasks.Update(ctx, ex, t); err != nil {
 			return err
 		}
