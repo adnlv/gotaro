@@ -1,13 +1,12 @@
 {{define "content"}}
 {{$d := .Data}}
 <style>
-/* True center: 1fr | auto | 1fr — toggle stays on the midline regardless of title length. */
 .tasks-toolbar {
 	display: grid;
 	grid-template-columns: 1fr auto 1fr;
 	align-items: center;
 	gap: 0.5rem;
-	margin-bottom: 1rem;
+	margin-bottom: 1.25rem;
 }
 .tasks-toolbar__title { justify-self: start; min-width: 0; }
 .tasks-toolbar__title .h3 { margin-bottom: 0; }
@@ -22,37 +21,142 @@
 	.tasks-toolbar__toggle { justify-self: center; }
 	.tasks-toolbar__actions { justify-self: end; }
 }
+.task-summary-card {
+	border: 1px solid rgba(59, 130, 246, 0.08);
+	background: linear-gradient(155deg, #ffffff 0%, #f8faff 45%, #eff3fb 100%);
+}
+.stat-card {
+	text-align: center;
+	padding: 0.65rem 0.75rem;
+	border-radius: 0.75rem;
+	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	min-width: 4.5rem;
+}
+.stat-card .stat-value {
+	font-size: 1.35rem;
+	font-weight: 700;
+	line-height: 1.2;
+}
+.stat-card .stat-label {
+	font-size: 0.65rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #6b7280;
+	font-weight: 500;
+}
+.task-activity-wrap {
+	background: rgba(255, 255, 255, 0.75);
+	border-radius: 0.5rem;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	padding: 0.35rem 0.5rem 0.15rem;
+}
+.task-activity-svg { display: block; width: 100%; max-height: 150px; }
+.task-item {
+	border: 1px solid rgba(0, 0, 0, 0.06);
+	border-radius: 0.75rem;
+	background: #fff;
+	padding: 1rem 1.25rem;
+	margin-bottom: 0.5rem;
+	transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+.task-item:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+.task-item.task-overdue {
+	border-left: 4px solid #ef4444;
+}
+.filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.25rem 0.65rem;
+	border-radius: 999px;
+	background: #e8f0fe;
+	color: #1e40af;
+	font-size: 0.75rem;
+	font-weight: 500;
+	border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.filter-chip a {
+	color: #1e40af;
+	text-decoration: none;
+	opacity: 0.6;
+}
+.filter-chip a:hover { opacity: 1; }
 </style>
 <div class="tasks-toolbar">
 	<div class="tasks-toolbar__title">
-		<h1 class="h3">{{if $d.ArchivedView}}Archived tasks{{else if $d.CompletedView}}Completed tasks{{else}}Open tasks{{end}}</h1>
+		<h1 class="h3 fw-bold">{{if $d.ArchivedView}}<i class="bi bi-archive me-1"></i>Archived{{else if $d.CompletedView}}<i class="bi bi-check-circle me-1"></i>Completed{{else}}<i class="bi bi-list-task me-1"></i>Open{{end}} tasks</h1>
 	</div>
 	<div class="tasks-toolbar__toggle">
 		<div class="btn-group flex-wrap" role="group" aria-label="Task list view">
-			<a href="/tasks" class="btn btn-sm {{if and (not $d.CompletedView) (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}">Open</a>
-			<a href="/tasks/completed" class="btn btn-sm {{if and $d.CompletedView (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}">Completed</a>
-			<a href="/tasks/archived" class="btn btn-sm {{if $d.ArchivedView}}btn-primary{{else}}btn-outline-primary{{end}}">Archived</a>
+			<a href="/tasks" class="btn btn-sm rounded-start-pill px-3 {{if and (not $d.CompletedView) (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}"><i class="bi bi-circle me-1"></i>Open</a>
+			<a href="/tasks/completed" class="btn btn-sm {{if and $d.CompletedView (not $d.ArchivedView)}}btn-primary{{else}}btn-outline-primary{{end}}"><i class="bi bi-check-circle me-1"></i>Completed</a>
+			<a href="/tasks/archived" class="btn btn-sm rounded-end-pill px-3 {{if $d.ArchivedView}}btn-primary{{else}}btn-outline-primary{{end}}"><i class="bi bi-archive me-1"></i>Archived</a>
 		</div>
 	</div>
-	<div class="tasks-toolbar__actions d-flex flex-wrap gap-1 justify-content-end">
-		<a href="{{$d.ExportURL}}" class="btn btn-sm btn-outline-secondary">Export CSV</a>
-		<a href="/tasks/new" class="btn btn-sm btn-success">New task</a>
+	<div class="tasks-toolbar__actions d-flex flex-wrap gap-2 justify-content-end">
+		<a href="{{$d.ExportURL}}" class="btn btn-sm btn-outline-secondary rounded-pill px-3"><i class="bi bi-download me-1"></i>Export</a>
+		<a href="/tasks/new" class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus-lg me-1"></i>New task</a>
 	</div>
 </div>
 
-<div class="card card-body py-2 px-3 shadow-sm mb-3 d-flex flex-wrap align-items-center gap-3 small" aria-label="Task summary">
-	<span class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">Summary</span>
-	<span><span class="text-muted">Total</span> <strong>{{$d.Stats.Total}}</strong></span>
-	<span><span class="text-muted">Open</span> <strong>{{$d.Stats.Open}}</strong></span>
-	<span><span class="text-muted">Completed</span> <strong>{{$d.Stats.Completed}}</strong></span>
-	<span><span class="text-muted">Archived</span> <strong>{{$d.Stats.Archived}}</strong></span>
-	<span><span class="text-muted">Overdue</span> <strong class="{{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</strong></span>
+<div class="card task-summary-card shadow-sm mb-3 overflow-hidden" aria-label="Task summary">
+	<div class="card-body p-3 p-md-4">
+		<div class="row g-4 align-items-stretch">
+			<div class="col-lg-4 col-xl-3">
+				<div class="text-muted text-uppercase fw-semibold mb-2" style="font-size: 0.65rem; letter-spacing: 0.07em;"><i class="bi bi-bar-chart me-1"></i>Overview</div>
+				<div class="d-flex flex-wrap gap-2">
+					<div class="stat-card">
+						<div class="stat-value">{{$d.Stats.Total}}</div>
+						<div class="stat-label">Total</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value text-primary">{{$d.Stats.Open}}</div>
+						<div class="stat-label">Open</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value text-success">{{$d.Stats.Completed}}</div>
+						<div class="stat-label">Done</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value">{{$d.Stats.Archived}}</div>
+						<div class="stat-label">Archived</div>
+					</div>
+					<div class="stat-card">
+						<div class="stat-value {{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</div>
+						<div class="stat-label">Overdue</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-lg-8 col-xl-9">
+				<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+					<span class="text-muted small"><i class="bi bi-activity me-1"></i>Activity — <strong>created</strong> vs <strong>done</strong> per day (UTC)</span>
+					<span class="small text-nowrap"><span class="text-primary fw-bold">●</span> Created &nbsp; <span class="text-success fw-bold">●</span> Done</span>
+				</div>
+				{{if $d.ActivityChart}}
+				<div class="task-activity-wrap">{{$d.ActivityChart}}</div>
+				{{else}}
+				<p class="text-muted small mb-0 fst-italic">Chart could not be loaded.</p>
+				{{end}}
+			</div>
+		</div>
+	</div>
 </div>
 
+<div class="mb-3">
+	<button class="btn btn-sm btn-outline-secondary rounded-pill px-3" type="button" data-bs-toggle="collapse" data-bs-target="#task-filters-body" aria-expanded="{{if $d.FiltersActive}}true{{else}}false{{end}}" aria-controls="task-filters-body">
+		<i class="bi bi-funnel me-1"></i>Filters{{if $d.FiltersActive}} <span class="badge bg-primary rounded-pill ms-1">Active</span>{{end}}
+	</button>
+</div>
+<div class="collapse {{if $d.FiltersActive}}show{{end}}" id="task-filters-body">
 <form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.ArchivedView}}/tasks/archived{{else if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
 	<div class="row g-2">
 		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.StatusAccentBG}}style="border-left: 4px solid {{$d.Query.StatusAccentBG}}"{{end}}>
-			<label class="form-label small mb-0">Status</label>
+			<label class="form-label small mb-0"><i class="bi bi-circle-half me-1"></i>Status</label>
 			<select class="form-select form-select-sm" name="status">
 				<option value="" {{if eq $d.Query.Status ""}}selected{{end}}>Any</option>
 				<option value="todo" {{if eq $d.Query.Status "todo"}}selected{{end}}>To do</option>
@@ -61,7 +165,7 @@
 			</select>
 		</div>
 		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.PriorityAccentBG}}style="border-left: 4px solid {{$d.Query.PriorityAccentBG}}"{{end}}>
-			<label class="form-label small mb-0">Priority</label>
+			<label class="form-label small mb-0"><i class="bi bi-flag me-1"></i>Priority</label>
 			<select class="form-select form-select-sm" name="priority">
 				<option value="" {{if eq $d.Query.Priority ""}}selected{{end}}>Any</option>
 				<option value="low" {{if eq $d.Query.Priority "low"}}selected{{end}}>Low</option>
@@ -70,29 +174,29 @@
 			</select>
 		</div>
 		<div class="col-md-2">
-			<label class="form-label small mb-0">Tag</label>
+			<label class="form-label small mb-0"><i class="bi bi-tag me-1"></i>Tag</label>
 			<input class="form-control form-control-sm" name="tag" value="{{$d.Query.Tag}}" placeholder="e.g. work">
 		</div>
 		<div class="col-md-2">
-			<label class="form-label small mb-0">Due from</label>
+			<label class="form-label small mb-0"><i class="bi bi-calendar-event me-1"></i>Due from</label>
 			<input class="form-control form-control-sm" type="date" name="due_from" value="{{$d.Query.DueFrom}}">
 		</div>
 		<div class="col-md-2">
-			<label class="form-label small mb-0">Due to</label>
+			<label class="form-label small mb-0"><i class="bi bi-calendar-event me-1"></i>Due to</label>
 			<input class="form-control form-control-sm" type="date" name="due_to" value="{{$d.Query.DueTo}}">
 		</div>
 		<div class="col-md-2">
-			<label class="form-label small mb-0">Search</label>
+			<label class="form-label small mb-0"><i class="bi bi-search me-1"></i>Search</label>
 			<input class="form-control form-control-sm" name="q" value="{{$d.Query.Search}}" placeholder="Title or notes">
 		</div>
 	</div>
 	<div class="row g-2 align-items-end mt-2">
 		<div class="col-md-2">
-			<label class="form-label small mb-0">Project</label>
+			<label class="form-label small mb-0"><i class="bi bi-folder me-1"></i>Project</label>
 			<input class="form-control form-control-sm" name="project" value="{{$d.Query.Project}}" placeholder="Exact name">
 		</div>
 		<div class="col-md-3">
-			<label class="form-label small mb-0">Sort by</label>
+			<label class="form-label small mb-0"><i class="bi bi-arrow-down-up me-1"></i>Sort by</label>
 			<select class="form-select form-select-sm" name="sort">
 				<option value="created_at" {{if eq $d.SortField "created_at"}}selected{{end}}>Created</option>
 				<option value="due_date" {{if eq $d.SortField "due_date"}}selected{{end}}>Due date</option>
@@ -107,11 +211,13 @@
 				<option value="asc" {{if eq $d.SortDir "asc"}}selected{{end}}>Ascending</option>
 			</select>
 		</div>
-		<div class="col-md-2">
-			<button id="task-filters-apply" class="btn btn-sm btn-outline-primary w-100" type="submit">Apply</button>
+		<div class="col-md-3 d-flex gap-2">
+			<button id="task-filters-apply" class="btn btn-sm btn-primary rounded-pill px-3 w-100" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+			<a href="{{$d.ListBasePath}}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 w-100">Clear</a>
 		</div>
 	</div>
 </form>
+</div>
 <script>
 (function () {
 	var form = document.getElementById('task-filters');
@@ -146,126 +252,136 @@
 </script>
 
 {{if not $d.Tasks}}
-<div class="card card-body shadow-sm text-center py-4">
+<div class="card card-body shadow-sm text-center py-5">
 	{{if $d.FiltersActive}}
-	<p class="text-muted mb-2">No tasks match your filters.</p>
-	<a class="btn btn-sm btn-outline-primary" href="{{$d.ListBasePath}}">Clear filters</a>
+	<i class="bi bi-funnel text-muted" style="font-size: 2.5rem;"></i>
+	<h5 class="mt-3 fw-semibold">No matching tasks</h5>
+	<p class="text-muted mb-3">Try adjusting your filters to find what you're looking for.</p>
+	<div><a class="btn btn-sm btn-outline-primary rounded-pill px-3" href="{{$d.ListBasePath}}"><i class="bi bi-x-circle me-1"></i>Clear filters</a></div>
 	{{else if eq $d.Stats.Total 0}}
-	<p class="mb-2">You do not have any tasks yet.</p>
-	<a href="/tasks/new" class="btn btn-primary">New task</a>
+	<i class="bi bi-rocket-takeoff text-primary" style="font-size: 2.5rem;"></i>
+	<h5 class="mt-3 fw-semibold">Ready to get started?</h5>
+	<p class="text-muted mb-3">Create your first task and start tracking your work.</p>
+	<div><a href="/tasks/new" class="btn btn-primary rounded-pill px-4"><i class="bi bi-plus-lg me-1"></i>New task</a></div>
 	{{else if $d.ArchivedView}}
-	<p class="text-muted mb-0">No archived tasks.</p>
+	<i class="bi bi-archive text-muted" style="font-size: 2.5rem;"></i>
+	<h5 class="mt-3 fw-semibold">No archived tasks</h5>
+	<p class="text-muted mb-0">Tasks you archive will appear here.</p>
 	{{else if $d.CompletedView}}
-	<p class="text-muted mb-2">No completed tasks yet.</p>
-	<a href="/tasks/new" class="btn btn-sm btn-outline-primary">New task</a>
+	<i class="bi bi-trophy text-muted" style="font-size: 2.5rem;"></i>
+	<h5 class="mt-3 fw-semibold">No completed tasks yet</h5>
+	<p class="text-muted mb-3">Finish a task and it will show up here.</p>
+	<div><a href="/tasks/new" class="btn btn-sm btn-outline-primary rounded-pill px-3"><i class="bi bi-plus-lg me-1"></i>New task</a></div>
 	{{else}}
-	<p class="text-muted mb-2">No open tasks right now.</p>
-	<p class="mb-2"><a href="/tasks/completed">View completed</a> or <a href="/tasks/new">create a task</a>.</p>
+	<i class="bi bi-inbox text-muted" style="font-size: 2.5rem;"></i>
+	<h5 class="mt-3 fw-semibold">All clear!</h5>
+	<p class="text-muted mb-3">No open tasks right now. <a href="/tasks/completed">View completed</a> or create a new one.</p>
+	<div><a href="/tasks/new" class="btn btn-primary rounded-pill px-4"><i class="bi bi-plus-lg me-1"></i>New task</a></div>
 	{{end}}
 </div>
 {{else}}
-<div class="list-group shadow-sm">
+<div class="d-flex flex-column gap-0">
 	{{range $d.Tasks}}
-	<div class="list-group-item{{if .Overdue}} border-start border-danger border-4{{end}}">
+	<div class="task-item{{if .Overdue}} task-overdue{{end}}">
 		<div class="d-flex justify-content-between align-items-start gap-2">
-			<div>
-				<a href="/tasks/{{.ID}}/edit" class="fw-semibold text-decoration-none">{{.Title}}</a>
-				<div class="small text-muted">
-					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-						<div>Created {{.CreatedAt}}</div>
-						<div class="d-flex flex-wrap align-items-center gap-1">
-							<span class="badge rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
-							<span class="badge rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
-						</div>
-					</div>
-					{{if .DueDate}}
-					<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-1">
-						<div class="{{if .Overdue}}text-danger fw-semibold{{end}}">Due {{.DueDate}}</div>
-						<div>
-							{{if .Overdue}}<span class="badge rounded-pill bg-danger">Overdue</span>{{end}}
-						</div>
-					</div>
-					{{end}}
+			<div class="flex-grow-1 min-width-0">
+				<div class="d-flex align-items-center gap-2 mb-1">
+					<a href="/tasks/{{.ID}}/edit" class="fw-semibold text-decoration-none fs-6">{{.Title}}</a>
+					<span class="badge badge-task rounded-pill" style="background-color: {{.StatusBG}}; color: {{.StatusFG}}">{{.StatusLabel}}</span>
+					<span class="badge badge-task rounded-pill" style="background-color: {{.PriorityBG}}; color: {{.PriorityFG}}">{{.PriorityLabel}}</span>
+					{{if .Overdue}}<span class="badge badge-task rounded-pill bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Overdue</span>{{end}}
 				</div>
-				{{if .Description}}<p class="mb-1 small">{{.Description}}</p>{{end}}
-				{{if .Project}}<div class="small text-muted mb-1">Project: <span class="text-body">{{.Project}}</span></div>{{end}}
+				<div class="d-flex flex-wrap align-items-center gap-2 small text-muted">
+					<span><i class="bi bi-clock me-1"></i>Created {{.CreatedAt}}</span>
+					{{if .DueDate}}<span class="{{if .Overdue}}text-danger fw-semibold{{end}}"><i class="bi bi-calendar-event me-1"></i>Due {{.DueDate}}</span>{{end}}
+					{{if .Project}}<span><i class="bi bi-folder me-1"></i>{{.Project}}</span>{{end}}
+				</div>
+				{{if .Description}}<p class="mb-1 mt-1 small text-muted">{{.Description}}</p>{{end}}
 				{{if .Tags}}
 				<div class="d-flex flex-wrap gap-1 mt-1">
 					{{range .Tags}}
-					<span class="badge rounded-pill {{if not .Color}}bg-secondary{{end}}" {{if .Color}}style="background-color: {{.Color}}"{{end}}>{{.Name}}</span>
+					<span class="badge rounded-pill {{if not .Color}}bg-secondary bg-opacity-10 text-secondary{{end}}" {{if .Color}}style="background-color: {{.Color}}"{{end}}><i class="bi bi-tag-fill me-1"></i>{{.Name}}</span>
 					{{end}}
 				</div>
 				{{end}}
 			</div>
-			{{if ne .Status "done"}}
-			<form method="post" action="/tasks/{{.ID}}/status" class="m-0 align-self-start">
-				<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-				<input type="hidden" name="status" value="done">
-				<button type="submit" class="btn btn-sm btn-success text-nowrap" title="Mark this task done">Done</button>
-			</form>
-			{{end}}
-			<div class="dropdown">
-				<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
-				<ul class="dropdown-menu dropdown-menu-end">
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<input type="hidden" name="status" value="todo">
-							<button class="dropdown-item" type="submit">Mark to do</button>
-						</form>
-					</li>
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<input type="hidden" name="status" value="in_progress">
-							<button class="dropdown-item" type="submit">Mark in progress</button>
-						</form>
-					</li>
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<input type="hidden" name="status" value="done">
-							<button class="dropdown-item" type="submit">Mark done</button>
-						</form>
-					</li>
-					<li><hr class="dropdown-divider"></li>
-					{{if $d.ArchivedView}}
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/unarchive" class="px-3 py-1">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<button class="dropdown-item" type="submit">Restore from archive</button>
-						</form>
-					</li>
-					{{else}}
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/archive" class="px-3 py-1">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<button class="dropdown-item" type="submit">Archive</button>
-						</form>
-					</li>
-					{{end}}
-					<li>
-						<form method="post" action="/tasks/{{.ID}}/delete" class="px-3 py-1" onsubmit="return confirm('Delete this task?');">
-							<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
-							<button class="dropdown-item text-danger" type="submit">Delete</button>
-						</form>
-					</li>
-				</ul>
+			<div class="d-flex align-items-center gap-1 flex-shrink-0">
+				{{if ne .Status "done"}}
+				<form method="post" action="/tasks/{{.ID}}/status" class="m-0">
+					<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+					<input type="hidden" name="status" value="done">
+					<button type="submit" class="btn btn-sm btn-success rounded-pill px-3 text-nowrap" title="Mark this task done"><i class="bi bi-check-lg me-1"></i>Done</button>
+				</form>
+				{{end}}
+				<div class="dropdown">
+					<button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown" aria-label="Task actions" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+						<i class="bi bi-three-dots-vertical"></i>
+					</button>
+					<ul class="dropdown-menu dropdown-menu-end shadow-sm">
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<input type="hidden" name="status" value="todo">
+								<button class="dropdown-item rounded" type="submit"><i class="bi bi-circle me-2"></i>Mark to do</button>
+							</form>
+						</li>
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<input type="hidden" name="status" value="in_progress">
+								<button class="dropdown-item rounded" type="submit"><i class="bi bi-play-circle me-2"></i>Mark in progress</button>
+							</form>
+						</li>
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/status" class="px-3 py-1">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<input type="hidden" name="status" value="done">
+								<button class="dropdown-item rounded" type="submit"><i class="bi bi-check-circle me-2"></i>Mark done</button>
+							</form>
+						</li>
+						<li><hr class="dropdown-divider"></li>
+						<li>
+							<a href="/tasks/{{.ID}}/edit" class="dropdown-item rounded px-3"><i class="bi bi-pencil me-2"></i>Edit</a>
+						</li>
+						{{if $d.ArchivedView}}
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/unarchive" class="px-3 py-1">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<button class="dropdown-item rounded" type="submit"><i class="bi bi-arrow-counterclockwise me-2"></i>Restore</button>
+							</form>
+						</li>
+						{{else}}
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/archive" class="px-3 py-1">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<button class="dropdown-item rounded" type="submit"><i class="bi bi-archive me-2"></i>Archive</button>
+							</form>
+						</li>
+						{{end}}
+						<li><hr class="dropdown-divider"></li>
+						<li>
+							<form method="post" action="/tasks/{{.ID}}/delete" class="px-3 py-1" onsubmit="return confirm('Delete this task?');">
+								<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+								<button class="dropdown-item rounded text-danger" type="submit"><i class="bi bi-trash me-2"></i>Delete</button>
+							</form>
+						</li>
+					</ul>
+				</div>
 			</div>
 		</div>
 	</div>
 	{{end}}
 </div>
 
-<nav class="mt-3 d-flex justify-content-between" aria-label="Pagination">
+<nav class="mt-4 d-flex justify-content-center align-items-center gap-3" aria-label="Pagination">
 	<div>
 		{{if and $d.HasPrev $d.PrevLink}}
-		<a class="btn btn-sm btn-outline-secondary" href="{{$d.PrevLink}}">Previous</a>
+		<a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="{{$d.PrevLink}}"><i class="bi bi-chevron-left me-1"></i>Previous</a>
 		{{end}}
 	</div>
 	<div>
 		{{if and $d.HasNext $d.NextLink}}
-		<a class="btn btn-sm btn-outline-secondary" href="{{$d.NextLink}}">Next</a>
+		<a class="btn btn-sm btn-outline-secondary rounded-pill px-3" href="{{$d.NextLink}}">Next<i class="bi bi-chevron-right ms-1"></i></a>
 		{{end}}
 	</div>
 </nav>

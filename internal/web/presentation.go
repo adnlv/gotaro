@@ -7,13 +7,13 @@ import "github.com/adnlv/gotaro/internal/domain"
 func statusPresentation(s domain.Status) (label, bg, fg string) {
 	switch s {
 	case domain.StatusTodo:
-		return "To do", "#6c757d", "#ffffff"
+		return "To do", "#64748b", "#ffffff"
 	case domain.StatusInProgress:
-		return "In progress", "#0d6efd", "#ffffff"
+		return "In progress", "#3b82f6", "#ffffff"
 	case domain.StatusDone:
-		return "Done", "#198754", "#ffffff"
+		return "Done", "#22c55e", "#ffffff"
 	default:
-		return s.String(), "#6c757d", "#ffffff"
+		return s.String(), "#64748b", "#ffffff"
 	}
 }
 
@@ -24,19 +24,19 @@ func statusPresentationFromSlug(slug string) (label, bg, fg string) {
 	if slug == "" {
 		return statusPresentation(domain.StatusTodo)
 	}
-	return slug, "#6c757d", "#ffffff"
+	return slug, "#64748b", "#ffffff"
 }
 
 func priorityPresentation(p domain.Priority) (label, bg, fg string) {
 	switch p {
 	case domain.PriorityLow:
-		return "Low", "#0aa2c0", "#ffffff"
+		return "Low", "#06b6d4", "#ffffff"
 	case domain.PriorityMedium:
-		return "Medium", "#ffc107", "#212529"
+		return "Medium", "#f59e0b", "#1c1917"
 	case domain.PriorityHigh:
-		return "High", "#dc3545", "#ffffff"
+		return "High", "#ef4444", "#ffffff"
 	default:
-		return p.String(), "#6c757d", "#ffffff"
+		return p.String(), "#64748b", "#ffffff"
 	}
 }
 
@@ -47,7 +47,7 @@ func priorityPresentationFromSlug(slug string) (label, bg, fg string) {
 	if slug == "" {
 		return priorityPresentation(domain.PriorityMedium)
 	}
-	return slug, "#6c757d", "#ffffff"
+	return slug, "#64748b", "#ffffff"
 }
 
 func decorateTaskFormColors(fv *TaskFormView) {

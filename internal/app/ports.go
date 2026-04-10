@@ -34,5 +34,6 @@ type TaskRepository interface {
 	Get(ctx context.Context, ex store.Executor, userID, taskID uint64) (*domain.Task, error)
 	List(ctx context.Context, ex store.Executor, q store.TaskQuery) ([]domain.Task, error)
 	StatsForUser(ctx context.Context, ex store.Executor, userID uint64) (domain.TaskStats, error)
+	DailyActivity(ctx context.Context, ex store.Executor, userID uint64, days int) ([]domain.DailyActivityPoint, error)
 	ReplaceTaskTags(ctx context.Context, ex store.Executor, userID, taskID uint64, names []string, defaultColor string) error
 }

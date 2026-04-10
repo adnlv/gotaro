@@ -168,6 +168,85 @@ func (TaskRepository) StatsForUser(ctx context.Context, ex Executor, userID uint
 	return s, nil
 }
 
+// DailyActivity returns one row per UTC calendar day from start..end inclusive (last `days` days through today).
+func (TaskRepository) DailyActivity(ctx context.Context, ex Executor, userID uint64, days int) ([]domain.DailyActivityPoint, error) {
+	if days < 1 {
+		days = 14
+	}
+	if days > 90 {
+		days = 90
+	}
+	now := time.Now().UTC()
+	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	start := end.AddDate(0, 0, -(days - 1))
+
+	created := make(map[string]int)
+	const qCreated = `
+	SELECT (created_at AT TIME ZONE 'UTC')::date, COUNT(*)::int
+	FROM tasks
+	WHERE user_id = $1
+	  AND (created_at AT TIME ZONE 'UTC')::date >= $2::date
+	  AND (created_at AT TIME ZONE 'UTC')::date <= $3::date
+	GROUP BY 1
+	`
+	rows, err := ex.QueryContext(ctx, qCreated, userID, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("daily created: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var d time.Time
+		var n int
+		if err := rows.Scan(&d, &n); err != nil {
+			return nil, err
+		}
+		created[d.Format("2006-01-02")] = n
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	completed := make(map[string]int)
+	done := int16(domain.StatusDone)
+	const qDone = `
+	SELECT (updated_at AT TIME ZONE 'UTC')::date, COUNT(*)::int
+	FROM tasks
+	WHERE user_id = $1 AND status = $2
+	  AND (updated_at AT TIME ZONE 'UTC')::date >= $3::date
+	  AND (updated_at AT TIME ZONE 'UTC')::date <= $4::date
+	GROUP BY 1
+	`
+	rows2, err := ex.QueryContext(ctx, qDone, userID, done, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("daily completed: %w", err)
+	}
+	defer func() { _ = rows2.Close() }()
+
+	for rows2.Next() {
+		var d time.Time
+		var n int
+		if err := rows2.Scan(&d, &n); err != nil {
+			return nil, err
+		}
+		completed[d.Format("2006-01-02")] = n
+	}
+	if err := rows2.Err(); err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.DailyActivityPoint, 0, days)
+	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
+		k := d.Format("2006-01-02")
+		out = append(out, domain.DailyActivityPoint{
+			Date:      d,
+			Created:   created[k],
+			Completed: completed[k],
+		})
+	}
+	return out, nil
+}
+
 func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]domain.Task, error) {
 	if q.Limit <= 0 {
 		q.Limit = 100

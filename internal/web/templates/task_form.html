@@ -1,71 +1,89 @@
 {{define "content"}}
 {{$f := .Data}}
-<h1 class="h3 mb-3">{{if $f.IsEdit}}Edit task{{else}}New task{{end}}</h1>
+<div class="row justify-content-center">
+<div class="col-lg-8">
+<div class="d-flex align-items-center gap-2 mb-3">
+	<a href="/tasks" class="btn btn-sm btn-outline-secondary rounded-circle" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" aria-label="Back to tasks"><i class="bi bi-arrow-left"></i></a>
+	<h1 class="h3 fw-bold mb-0">{{if $f.IsEdit}}<i class="bi bi-pencil me-2"></i>Edit task{{else}}<i class="bi bi-plus-circle me-2"></i>New task{{end}}</h1>
+</div>
 {{if and $f.IsEdit $f.Archived}}
-<div class="alert alert-secondary d-flex flex-wrap align-items-center justify-content-between gap-2">
-	<span>This task is archived and hidden from Open and Completed lists.</span>
+<div class="alert alert-secondary d-flex flex-wrap align-items-center justify-content-between gap-2 rounded-3">
+	<span><i class="bi bi-archive me-1"></i>This task is archived and hidden from Open and Completed lists.</span>
 	<form method="post" action="/tasks/{{$f.ID}}/unarchive" class="m-0">
 		<input type="hidden" name="csrf_token" value="{{.CSRF}}">
-		<button type="submit" class="btn btn-sm btn-outline-dark">Restore from archive</button>
+		<button type="submit" class="btn btn-sm btn-outline-dark rounded-pill px-3"><i class="bi bi-arrow-counterclockwise me-1"></i>Restore</button>
 	</form>
 </div>
 {{end}}
-<form method="post" action="{{if $f.IsEdit}}/tasks/{{$f.ID}}{{else}}/tasks{{end}}" class="card card-body shadow-sm">
+<form method="post" action="{{if $f.IsEdit}}/tasks/{{$f.ID}}{{else}}/tasks{{end}}" class="card shadow-sm border-0">
 	<input type="hidden" name="csrf_token" value="{{.CSRF}}">
-	<div class="mb-3">
-		<label class="form-label" for="title">Title</label>
-		<input class="form-control" id="title" name="title" value="{{$f.Title}}" required>
-	</div>
-	<div class="mb-3">
-		<label class="form-label" for="description">Description</label>
-		<textarea class="form-control" id="description" name="description" rows="4">{{$f.Description}}</textarea>
-	</div>
-	<div class="row g-2">
-		<div id="status-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.StatusBG}}">
-			<label class="form-label d-flex align-items-center gap-2" for="status">Status <span id="status-badge" class="badge rounded-pill" style="background-color: {{$f.StatusBG}}; color: {{$f.StatusFG}}">{{$f.StatusLabel}}</span></label>
-			<select class="form-select" id="status" name="status">
-				<option value="todo" {{if eq $f.Status "todo"}}selected{{end}}>To do</option>
-				<option value="in_progress" {{if eq $f.Status "in_progress"}}selected{{end}}>In progress</option>
-				<option value="done" {{if eq $f.Status "done"}}selected{{end}}>Done</option>
-			</select>
+	<div class="card-body p-4">
+		<div class="mb-2 text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.07em;"><i class="bi bi-type me-1"></i>Details</div>
+		<div class="mb-3">
+			<label class="form-label fw-medium" for="title">Title</label>
+			<input class="form-control form-control-lg" id="title" name="title" value="{{$f.Title}}" placeholder="What needs to be done?" required>
 		</div>
-		<div id="priority-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.PriorityBG}}">
-			<label class="form-label d-flex align-items-center gap-2" for="priority">Priority <span id="priority-badge" class="badge rounded-pill" style="background-color: {{$f.PriorityBG}}; color: {{$f.PriorityFG}}">{{$f.PriorityLabel}}</span></label>
-			<select class="form-select" id="priority" name="priority">
-				<option value="low" {{if eq $f.Priority "low"}}selected{{end}}>Low</option>
-				<option value="medium" {{if eq $f.Priority "medium"}}selected{{end}}>Medium</option>
-				<option value="high" {{if eq $f.Priority "high"}}selected{{end}}>High</option>
-			</select>
+		<div class="mb-4">
+			<label class="form-label fw-medium" for="description">Description</label>
+			<textarea class="form-control" id="description" name="description" rows="5" placeholder="Add details, notes, or context...">{{$f.Description}}</textarea>
 		</div>
-		<div class="col-md-4">
-			<label class="form-label" for="due_date">Due date</label>
-			<input class="form-control" type="date" id="due_date" name="due_date" value="{{$f.DueDate}}">
+
+		<hr class="my-4">
+		<div class="mb-2 text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.07em;"><i class="bi bi-sliders me-1"></i>Status &amp; Priority</div>
+		<div class="row g-3 mb-4">
+			<div id="status-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.StatusBG}}">
+				<label class="form-label fw-medium d-flex align-items-center gap-2" for="status"><i class="bi bi-circle-half"></i>Status <span id="status-badge" class="badge badge-task rounded-pill" style="background-color: {{$f.StatusBG}}; color: {{$f.StatusFG}}">{{$f.StatusLabel}}</span></label>
+				<select class="form-select" id="status" name="status">
+					<option value="todo" {{if eq $f.Status "todo"}}selected{{end}}>To do</option>
+					<option value="in_progress" {{if eq $f.Status "in_progress"}}selected{{end}}>In progress</option>
+					<option value="done" {{if eq $f.Status "done"}}selected{{end}}>Done</option>
+				</select>
+			</div>
+			<div id="priority-accent-box" class="col-md-4 ps-3 rounded-start" style="border-left: 4px solid {{$f.PriorityBG}}">
+				<label class="form-label fw-medium d-flex align-items-center gap-2" for="priority"><i class="bi bi-flag"></i>Priority <span id="priority-badge" class="badge badge-task rounded-pill" style="background-color: {{$f.PriorityBG}}; color: {{$f.PriorityFG}}">{{$f.PriorityLabel}}</span></label>
+				<select class="form-select" id="priority" name="priority">
+					<option value="low" {{if eq $f.Priority "low"}}selected{{end}}>Low</option>
+					<option value="medium" {{if eq $f.Priority "medium"}}selected{{end}}>Medium</option>
+					<option value="high" {{if eq $f.Priority "high"}}selected{{end}}>High</option>
+				</select>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label fw-medium d-flex align-items-center gap-2" for="due_date"><i class="bi bi-calendar-event"></i>Due date</label>
+				<input class="form-control" type="date" id="due_date" name="due_date" value="{{$f.DueDate}}">
+			</div>
+		</div>
+
+		<hr class="my-4">
+		<div class="mb-2 text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.07em;"><i class="bi bi-collection me-1"></i>Organization</div>
+		<div class="row g-3">
+			<div class="col-md-6">
+				<label class="form-label fw-medium" for="project"><i class="bi bi-folder me-1"></i>Project</label>
+				<input class="form-control" id="project" name="project" value="{{$f.Project}}" placeholder="Optional category (created on save)">
+			</div>
+			<div class="col-md-6">
+				<label class="form-label fw-medium" for="tags"><i class="bi bi-tags me-1"></i>Tags</label>
+				<input class="form-control" id="tags" name="tags" value="{{$f.Tags}}" placeholder="Comma-separated, e.g. work, home">
+			</div>
 		</div>
 	</div>
-	<div class="mb-3 mt-3">
-		<label class="form-label" for="project">Project</label>
-		<input class="form-control" id="project" name="project" value="{{$f.Project}}" placeholder="Optional category (created when you save)">
-	</div>
-	<div class="mb-3">
-		<label class="form-label" for="tags">Tags</label>
-		<input class="form-control" id="tags" name="tags" value="{{$f.Tags}}" placeholder="comma-separated, e.g. work, home">
-	</div>
-	<div class="d-flex gap-2">
-		<button class="btn btn-primary" type="submit">Save</button>
-		<a class="btn btn-outline-secondary" href="/tasks">Cancel</a>
+	<div class="card-footer bg-transparent border-top-0 p-4 pt-0 d-flex gap-2">
+		<button class="btn btn-primary btn-lg rounded-pill px-4 fw-medium" type="submit"><i class="bi bi-check-lg me-1"></i>Save task</button>
+		<a class="btn btn-outline-secondary rounded-pill px-4" href="/tasks"><i class="bi bi-x-lg me-1"></i>Cancel</a>
 	</div>
 </form>
+</div>
+</div>
 <script>
 (function () {
 	var statusPalette = {
-		todo: { label: 'To do', bg: '#6c757d', fg: '#ffffff' },
-		in_progress: { label: 'In progress', bg: '#0d6efd', fg: '#ffffff' },
-		done: { label: 'Done', bg: '#198754', fg: '#ffffff' }
+		todo: { label: 'To do', bg: '#64748b', fg: '#ffffff' },
+		in_progress: { label: 'In progress', bg: '#3b82f6', fg: '#ffffff' },
+		done: { label: 'Done', bg: '#22c55e', fg: '#ffffff' }
 	};
 	var priorityPalette = {
-		low: { label: 'Low', bg: '#0aa2c0', fg: '#ffffff' },
-		medium: { label: 'Medium', bg: '#ffc107', fg: '#212529' },
-		high: { label: 'High', bg: '#dc3545', fg: '#ffffff' }
+		low: { label: 'Low', bg: '#06b6d4', fg: '#ffffff' },
+		medium: { label: 'Medium', bg: '#f59e0b', fg: '#1c1917' },
+		high: { label: 'High', bg: '#ef4444', fg: '#ffffff' }
 	};
 	function bindAccent(selectId, boxId, badgeId, palette, fallbackKey) {
 		var sel = document.getElementById(selectId);
