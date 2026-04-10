@@ -11,6 +11,24 @@ GoTaro is a simple web-based task tracker written in Go (server-rendered HTML, n
 
 Migrations run on startup. Optional: `GOTARO_COOKIE_SECURE=true` when serving over HTTPS.
 
+## Seed test data
+
+Create a test user and populate tasks (with projects/tags) using:
+
+`go run ./cmd/seed`
+
+Defaults:
+- Email: `test@example.com`
+- Password: `test12345`
+- Tasks: `80`
+- Projects: `6`
+- Tags: `10`
+- Existing tasks/projects/tags for that user are wiped before seeding.
+
+Examples:
+- `go run ./cmd/seed -email qa@example.com -password supersecret -tasks 150`
+- `go run ./cmd/seed -wipe=false -tasks 40` (append more tasks instead of wiping)
+
 ## Features (summary)
 
 - Tasks: title, optional description, status, priority, due date, tags, optional **project** (category).
