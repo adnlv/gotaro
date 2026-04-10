@@ -166,6 +166,13 @@
 				</div>
 				{{end}}
 			</div>
+			{{if ne .Status "done"}}
+			<form method="post" action="/tasks/{{.ID}}/status" class="m-0 align-self-start">
+				<input type="hidden" name="csrf_token" value="{{$.CSRF}}">
+				<input type="hidden" name="status" value="done">
+				<button type="submit" class="btn btn-sm btn-success text-nowrap" title="Mark this task done">Done</button>
+			</form>
+			{{end}}
 			<div class="dropdown">
 				<button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
 				<ul class="dropdown-menu dropdown-menu-end">
