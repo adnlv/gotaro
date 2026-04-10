@@ -39,6 +39,15 @@
 	</div>
 </div>
 
+<div class="card card-body py-2 px-3 shadow-sm mb-3 d-flex flex-wrap align-items-center gap-3 small" aria-label="Task summary">
+	<span class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.04em;">Summary</span>
+	<span><span class="text-muted">Total</span> <strong>{{$d.Stats.Total}}</strong></span>
+	<span><span class="text-muted">Open</span> <strong>{{$d.Stats.Open}}</strong></span>
+	<span><span class="text-muted">Completed</span> <strong>{{$d.Stats.Completed}}</strong></span>
+	<span><span class="text-muted">Archived</span> <strong>{{$d.Stats.Archived}}</strong></span>
+	<span><span class="text-muted">Overdue</span> <strong class="{{if gt $d.Stats.Overdue 0}}text-danger{{end}}">{{$d.Stats.Overdue}}</strong></span>
+</div>
+
 <form id="task-filters" class="card card-body shadow-sm mb-3" method="get" action="{{if $d.ArchivedView}}/tasks/archived{{else if $d.CompletedView}}/tasks/completed{{else}}/tasks{{end}}">
 	<div class="row g-2">
 		<div class="col-md-2 ps-2 rounded-start" {{if $d.Query.StatusAccentBG}}style="border-left: 4px solid {{$d.Query.StatusAccentBG}}"{{end}}>
@@ -136,7 +145,7 @@
 	{{if $d.FiltersActive}}
 	<p class="text-muted mb-2">No tasks match your filters.</p>
 	<a class="btn btn-sm btn-outline-primary" href="{{$d.ListBasePath}}">Clear filters</a>
-	{{else if eq $d.TotalTaskCount 0}}
+	{{else if eq $d.Stats.Total 0}}
 	<p class="mb-2">You do not have any tasks yet.</p>
 	<a href="/tasks/new" class="btn btn-primary">New task</a>
 	{{else if $d.ArchivedView}}

@@ -1,5 +1,7 @@
 package web
 
+import "github.com/adnlv/gotaro/internal/domain"
+
 // PageData is passed to HTML templates (no password material).
 type PageData struct {
 	Title  string
@@ -17,13 +19,13 @@ type PageUser struct {
 }
 
 type TaskListView struct {
-	Tasks          []TaskRow
-	CompletedView  bool
-	ArchivedView   bool
-	TotalTaskCount int
-	FiltersActive  bool
-	ListBasePath   string
-	Query          ListQueryView
+	Tasks         []TaskRow
+	CompletedView bool
+	ArchivedView  bool
+	Stats         domain.TaskStats
+	FiltersActive bool
+	ListBasePath  string
+	Query         ListQueryView
 	SortField     string
 	SortDir       string
 	HasPrev       bool

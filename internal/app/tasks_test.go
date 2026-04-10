@@ -33,8 +33,8 @@ func (s *spyTaskRepo) List(ctx context.Context, ex store.Executor, q store.TaskQ
 	return nil, nil
 }
 
-func (s *spyTaskRepo) CountAllForUser(ctx context.Context, ex store.Executor, userID uint64) (int, error) {
-	return 0, nil
+func (s *spyTaskRepo) StatsForUser(ctx context.Context, ex store.Executor, userID uint64) (domain.TaskStats, error) {
+	return domain.TaskStats{}, nil
 }
 
 func (s *spyTaskRepo) ReplaceTaskTags(ctx context.Context, ex store.Executor, userID, taskID uint64, names []string, defaultColor string) error {

@@ -132,14 +132,31 @@ func (TaskRepository) Get(ctx context.Context, ex Executor, userID, taskID uint6
 	return &t, nil
 }
 
-// CountAllForUser returns how many tasks exist for the user (any status, archived or not).
-func (TaskRepository) CountAllForUser(ctx context.Context, ex Executor, userID uint64) (int, error) {
-	const q = `SELECT COUNT(*) FROM tasks WHERE user_id = $1`
-	var n int
-	if err := ex.QueryRowContext(ctx, q, userID).Scan(&n); err != nil {
-		return 0, fmt.Errorf("count tasks: %w", err)
+// StatsForUser returns aggregate counts for the user's tasks (matches domain overdue rule in UTC).
+func (TaskRepository) StatsForUser(ctx context.Context, ex Executor, userID uint64) (domain.TaskStats, error) {
+	done := int16(domain.StatusDone)
+	const q = `
+	SELECT
+		COUNT(*)::int,
+		COUNT(*) FILTER (WHERE archived_at IS NULL AND status <> $2)::int,
+		COUNT(*) FILTER (WHERE archived_at IS NULL AND status = $2)::int,
+		COUNT(*) FILTER (WHERE archived_at IS NOT NULL)::int,
+		COUNT(*) FILTER (
+			WHERE archived_at IS NULL
+			AND status <> $2
+			AND due_date IS NOT NULL
+			AND (due_date AT TIME ZONE 'UTC')::date < (timezone('UTC', now()))::date
+		)::int
+	FROM tasks
+	WHERE user_id = $1
+	`
+	var s domain.TaskStats
+	if err := ex.QueryRowContext(ctx, q, userID, done).Scan(
+		&s.Total, &s.Open, &s.Completed, &s.Archived, &s.Overdue,
+	); err != nil {
+		return domain.TaskStats{}, fmt.Errorf("task stats: %w", err)
 	}
-	return n, nil
+	return s, nil
 }
 
 func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]domain.Task, error) {

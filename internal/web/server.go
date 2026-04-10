@@ -367,9 +367,9 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		return
 	}
 
-	totalCount, err := s.tasks.CountAllTasks(ctx, sess.User.ID)
+	stats, err := s.tasks.Stats(ctx, sess.User.ID)
 	if err != nil {
-		s.log.Error("count tasks", "err", err)
+		s.log.Error("task stats", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -405,13 +405,13 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	}
 
 	view := TaskListView{
-		Tasks:          taskRows(tasks, time.Now().UTC()),
-		CompletedView:  completed,
-		ArchivedView:   archived,
-		TotalTaskCount: totalCount,
-		FiltersActive:  taskListFiltersActive(r),
-		ListBasePath:   listBase,
-		Query:          qv,
+		Tasks:         taskRows(tasks, time.Now().UTC()),
+		CompletedView: completed,
+		ArchivedView:  archived,
+		Stats:         stats,
+		FiltersActive: taskListFiltersActive(r),
+		ListBasePath:  listBase,
+		Query:         qv,
 		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
 		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
 		HasPrev:        hasPrev,

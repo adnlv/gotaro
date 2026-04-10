@@ -29,6 +29,6 @@ type TaskRepository interface {
 	Delete(ctx context.Context, ex store.Executor, userID, taskID uint64) error
 	Get(ctx context.Context, ex store.Executor, userID, taskID uint64) (*domain.Task, error)
 	List(ctx context.Context, ex store.Executor, q store.TaskQuery) ([]domain.Task, error)
-	CountAllForUser(ctx context.Context, ex store.Executor, userID uint64) (int, error)
+	StatsForUser(ctx context.Context, ex store.Executor, userID uint64) (domain.TaskStats, error)
 	ReplaceTaskTags(ctx context.Context, ex store.Executor, userID, taskID uint64, names []string, defaultColor string) error
 }
