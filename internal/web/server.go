@@ -514,23 +514,33 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	if strings.TrimSpace(qv.Priority) != "" {
 		_, qv.PriorityAccentBG, _ = priorityPresentationFromSlug(qv.Priority)
 	}
+	projectOptions, err := s.tasks.ExistingProjectNames(ctx, sess.User.ID)
+	if err != nil {
+		s.log.Error("list project filter suggestions", "err", err)
+	}
+	tagOptions, err := s.tasks.ExistingTagNames(ctx, sess.User.ID)
+	if err != nil {
+		s.log.Error("list tag filter suggestions", "err", err)
+	}
 
 	view := TaskListView{
-		Tasks:         taskRows(tasks, time.Now().UTC()),
-		CompletedView: completed,
-		ArchivedView:  archived,
-		Stats:         stats,
-		ActivityChart: activityChartSVG(activity),
-		FiltersActive: taskListFiltersActive(r),
-		ListBasePath:  listBase,
-		ExportURL:     taskExportPath(r, completed, archived),
-		Query:         qv,
-		SortField:     firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
-		SortDir:       firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
-		HasPrev:       hasPrev,
-		HasNext:       hasNext,
-		PrevLink:      prev,
-		NextLink:      next,
+		Tasks:          taskRows(tasks, time.Now().UTC()),
+		CompletedView:  completed,
+		ArchivedView:   archived,
+		Stats:          stats,
+		ActivityChart:  activityChartSVG(activity),
+		FiltersActive:  taskListFiltersActive(r),
+		ListBasePath:   listBase,
+		ExportURL:      taskExportPath(r, completed, archived),
+		Query:          qv,
+		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
+		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
+		HasPrev:        hasPrev,
+		HasNext:        hasNext,
+		PrevLink:       prev,
+		NextLink:       next,
+		ProjectOptions: projectOptions,
+		TagOptions:     tagOptions,
 	}
 
 	s.render(w, tplFileTasksList, PageData{

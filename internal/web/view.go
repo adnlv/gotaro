@@ -23,21 +23,23 @@ type PageUser struct {
 }
 
 type TaskListView struct {
-	Tasks         []TaskRow
-	CompletedView bool
-	ArchivedView  bool
-	Stats         domain.TaskStats
-	ActivityChart template.HTML
-	FiltersActive bool
-	ListBasePath  string
-	ExportURL     string
-	Query         ListQueryView
-	SortField     string
-	SortDir       string
-	HasPrev       bool
-	HasNext       bool
-	PrevLink      string
-	NextLink      string
+	Tasks          []TaskRow
+	CompletedView  bool
+	ArchivedView   bool
+	Stats          domain.TaskStats
+	ActivityChart  template.HTML
+	FiltersActive  bool
+	ListBasePath   string
+	ExportURL      string
+	Query          ListQueryView
+	SortField      string
+	SortDir        string
+	HasPrev        bool
+	HasNext        bool
+	PrevLink       string
+	NextLink       string
+	ProjectOptions []string
+	TagOptions     []string
 }
 
 type ListQueryView struct {
@@ -78,22 +80,22 @@ type TagRow struct {
 }
 
 type TaskFormView struct {
-	ID            uint64
-	Title         string
-	Description   string
-	Archived      bool
-	Status        string
-	StatusLabel   string
-	StatusBG      string
-	StatusFG      string
-	Priority      string
-	PriorityLabel string
-	PriorityBG    string
-	PriorityFG    string
-	DueDate       string
-	Project       string
-	Tags          string
+	ID             uint64
+	Title          string
+	Description    string
+	Archived       bool
+	Status         string
+	StatusLabel    string
+	StatusBG       string
+	StatusFG       string
+	Priority       string
+	PriorityLabel  string
+	PriorityBG     string
+	PriorityFG     string
+	DueDate        string
+	Project        string
+	Tags           string
 	ProjectOptions []string
 	TagOptions     []string
-	IsEdit        bool
+	IsEdit         bool
 }

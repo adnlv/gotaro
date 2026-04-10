@@ -202,7 +202,12 @@
 		</div>
 		<div class="col-md-2">
 			<label class="form-label small mb-0"><i class="bi bi-tag me-1"></i>Tag</label>
-			<input class="form-control form-control-sm" name="tag" value="{{$d.Query.Tag}}" placeholder="e.g. work">
+			<input class="form-control form-control-sm" name="tag" value="{{$d.Query.Tag}}" placeholder="e.g. work" list="filter-tag-suggestions">
+			{{if $d.TagOptions}}
+			<datalist id="filter-tag-suggestions">
+				{{range $d.TagOptions}}<option value="{{.}}"></option>{{end}}
+			</datalist>
+			{{end}}
 		</div>
 		<div class="col-md-2">
 			<label class="form-label small mb-0"><i class="bi bi-calendar-event me-1"></i>Due from</label>
@@ -220,7 +225,12 @@
 	<div class="row g-2 align-items-end mt-2">
 		<div class="col-md-2">
 			<label class="form-label small mb-0"><i class="bi bi-folder me-1"></i>Project</label>
-			<input class="form-control form-control-sm" name="project" value="{{$d.Query.Project}}" placeholder="Exact name">
+			<input class="form-control form-control-sm" name="project" value="{{$d.Query.Project}}" placeholder="Exact name" list="filter-project-suggestions">
+			{{if $d.ProjectOptions}}
+			<datalist id="filter-project-suggestions">
+				{{range $d.ProjectOptions}}<option value="{{.}}"></option>{{end}}
+			</datalist>
+			{{end}}
 		</div>
 		<div class="col-md-3">
 			<label class="form-label small mb-0"><i class="bi bi-arrow-down-up me-1"></i>Sort by</label>
@@ -243,6 +253,24 @@
 			<a href="{{$d.ListBasePath}}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 w-100">Clear</a>
 		</div>
 	</div>
+	{{if or $d.ProjectOptions $d.TagOptions}}
+	<div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+		{{if $d.ProjectOptions}}
+		<span class="small text-muted">Projects:</span>
+		{{range $d.ProjectOptions}}
+		<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 filter-project-suggestion" data-project="{{.}}">{{.}}</button>
+		{{end}}
+		{{end}}
+	</div>
+	<div class="mt-1 d-flex flex-wrap gap-2 align-items-center">
+		{{if $d.TagOptions}}
+		<span class="small text-muted">Tags:</span>
+		{{range $d.TagOptions}}
+		<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-0 filter-tag-suggestion" data-tag="{{.}}">{{.}}</button>
+		{{end}}
+		{{end}}
+	</div>
+	{{end}}
 </form>
 </div>
 <script>
@@ -275,6 +303,22 @@
 	});
 	var apply = document.getElementById('task-filters-apply');
 	if (apply) apply.classList.add('d-none');
+	var projectInput = form.querySelector('input[name="project"]');
+	var tagInput = form.querySelector('input[name="tag"]');
+	document.querySelectorAll('.filter-project-suggestion').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			if (!projectInput) return;
+			projectInput.value = (btn.getAttribute('data-project') || '').trim();
+			submitNow();
+		});
+	});
+	document.querySelectorAll('.filter-tag-suggestion').forEach(function (btn) {
+		btn.addEventListener('click', function () {
+			if (!tagInput) return;
+			tagInput.value = (btn.getAttribute('data-tag') || '').trim();
+			submitNow();
+		});
+	});
 })();
 </script>
 
