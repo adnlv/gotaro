@@ -33,24 +33,24 @@ type TaskListParams struct {
 	Limit           int
 }
 
-func (s *TaskService) List(ctx context.Context, p TaskListParams) ([]domain.Task, error) {
+func (s *TaskService) taskStoreQuery(p TaskListParams, limit, offset int) (store.TaskQuery, error) {
 	sortField, err := domain.ValidateSortField(p.SortField)
 	if err != nil {
-		return nil, err
+		return store.TaskQuery{}, err
 	}
 	sortDir, err := domain.ValidateSortDir(p.SortDir)
 	if err != nil {
-		return nil, err
+		return store.TaskQuery{}, err
 	}
-
-	limit := p.Limit
 	if limit <= 0 {
 		limit = 25
 	}
-	if limit > 100 {
-		limit = 100
+	if limit > 500 {
+		limit = 500
 	}
-
+	if offset < 0 {
+		offset = 0
+	}
 	q := store.TaskQuery{
 		UserID:        p.UserID,
 		ArchivedOnly:  p.ArchivedView,
@@ -64,16 +64,54 @@ func (s *TaskService) List(ctx context.Context, p TaskListParams) ([]domain.Task
 		Search:        p.Search,
 		SortField:     sortField,
 		SortDir:       sortDir,
-		Offset:        p.Offset,
+		Offset:        offset,
 		Limit:         limit,
 	}
-
 	if p.Status != nil {
 		q.OpenOnly = false
 		q.CompletedOnly = false
 	}
+	return q, nil
+}
 
+func (s *TaskService) List(ctx context.Context, p TaskListParams) ([]domain.Task, error) {
+	limit := p.Limit
+	if limit <= 0 {
+		limit = 25
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	offset := p.Offset
+	if offset < 0 {
+		offset = 0
+	}
+	q, err := s.taskStoreQuery(p, limit, offset)
+	if err != nil {
+		return nil, err
+	}
 	return s.Tasks.List(ctx, s.Queries, q)
+}
+
+// ListAllMatching returns every task matching the list filters, paging internally (up to store list cap per page).
+func (s *TaskService) ListAllMatching(ctx context.Context, p TaskListParams) ([]domain.Task, error) {
+	const page = 500
+	var all []domain.Task
+	for offset := 0; ; offset += page {
+		q, err := s.taskStoreQuery(p, page, offset)
+		if err != nil {
+			return nil, err
+		}
+		batch, err := s.Tasks.List(ctx, s.Queries, q)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, batch...)
+		if len(batch) < page {
+			break
+		}
+	}
+	return all, nil
 }
 
 func (s *TaskService) Stats(ctx context.Context, userID uint64) (domain.TaskStats, error) {
