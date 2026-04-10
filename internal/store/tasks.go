@@ -132,6 +132,16 @@ func (TaskRepository) Get(ctx context.Context, ex Executor, userID, taskID uint6
 	return &t, nil
 }
 
+// CountAllForUser returns how many tasks exist for the user (any status, archived or not).
+func (TaskRepository) CountAllForUser(ctx context.Context, ex Executor, userID uint64) (int, error) {
+	const q = `SELECT COUNT(*) FROM tasks WHERE user_id = $1`
+	var n int
+	if err := ex.QueryRowContext(ctx, q, userID).Scan(&n); err != nil {
+		return 0, fmt.Errorf("count tasks: %w", err)
+	}
+	return n, nil
+}
+
 func (TaskRepository) List(ctx context.Context, ex Executor, q TaskQuery) ([]domain.Task, error) {
 	if q.Limit <= 0 {
 		q.Limit = 100

@@ -17,10 +17,13 @@ type PageUser struct {
 }
 
 type TaskListView struct {
-	Tasks         []TaskRow
-	CompletedView bool
-	ArchivedView  bool
-	Query         ListQueryView
+	Tasks          []TaskRow
+	CompletedView  bool
+	ArchivedView   bool
+	TotalTaskCount int
+	FiltersActive  bool
+	ListBasePath   string
+	Query          ListQueryView
 	SortField     string
 	SortDir       string
 	HasPrev       bool

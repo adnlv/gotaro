@@ -181,6 +181,17 @@ func flashMessage(code string) string {
 	}
 }
 
+// taskListFiltersActive is true when the user narrowed the list beyond the default tab (sort alone does not count).
+func taskListFiltersActive(r *http.Request) bool {
+	q := r.URL.Query()
+	return strings.TrimSpace(q.Get("status")) != "" ||
+		strings.TrimSpace(q.Get("priority")) != "" ||
+		strings.TrimSpace(q.Get("tag")) != "" ||
+		strings.TrimSpace(q.Get("due_from")) != "" ||
+		strings.TrimSpace(q.Get("due_to")) != "" ||
+		strings.TrimSpace(q.Get("q")) != ""
+}
+
 func friendlyError(err error) string {
 	if err == nil {
 		return ""

@@ -367,12 +367,25 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 		return
 	}
 
+	totalCount, err := s.tasks.CountAllTasks(ctx, sess.User.ID)
+	if err != nil {
+		s.log.Error("count tasks", "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	hasMore := len(tasks) == limit
 	listPath := "open"
 	if archived {
 		listPath = "archived"
 	} else if completed {
 		listPath = "completed"
+	}
+	listBase := "/tasks"
+	if archived {
+		listBase = "/tasks/archived"
+	} else if completed {
+		listBase = "/tasks/completed"
 	}
 	prev, next, hasPrev, hasNext := paginationLinks(r, listPath, limit, offset, hasMore)
 
@@ -392,16 +405,19 @@ func (s *Server) renderTaskList(w http.ResponseWriter, r *http.Request, complete
 	}
 
 	view := TaskListView{
-		Tasks:         taskRows(tasks, time.Now().UTC()),
-		CompletedView: completed,
-		ArchivedView:  archived,
-		Query:         qv,
-		SortField: firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
-		SortDir:   firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
-		HasPrev:   hasPrev,
-		HasNext:   hasNext,
-		PrevLink:  prev,
-		NextLink:  next,
+		Tasks:          taskRows(tasks, time.Now().UTC()),
+		CompletedView:  completed,
+		ArchivedView:   archived,
+		TotalTaskCount: totalCount,
+		FiltersActive:  taskListFiltersActive(r),
+		ListBasePath:   listBase,
+		Query:          qv,
+		SortField:      firstNonEmpty(r.URL.Query().Get("sort"), "created_at"),
+		SortDir:        firstNonEmpty(r.URL.Query().Get("dir"), "desc"),
+		HasPrev:        hasPrev,
+		HasNext:        hasNext,
+		PrevLink:       prev,
+		NextLink:       next,
 	}
 
 	s.render(w, tplFileTasksList, PageData{

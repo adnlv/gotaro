@@ -76,6 +76,10 @@ func (s *TaskService) List(ctx context.Context, p TaskListParams) ([]domain.Task
 	return s.Tasks.List(ctx, s.Queries, q)
 }
 
+func (s *TaskService) CountAllTasks(ctx context.Context, userID uint64) (int, error) {
+	return s.Tasks.CountAllForUser(ctx, s.Queries, userID)
+}
+
 func (s *TaskService) Get(ctx context.Context, userID, taskID uint64) (*domain.Task, error) {
 	return s.Tasks.Get(ctx, s.Queries, userID, taskID)
 }

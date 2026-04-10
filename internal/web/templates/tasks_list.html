@@ -132,7 +132,23 @@
 </script>
 
 {{if not $d.Tasks}}
-<p class="text-muted">No tasks match your filters.</p>
+<div class="card card-body shadow-sm text-center py-4">
+	{{if $d.FiltersActive}}
+	<p class="text-muted mb-2">No tasks match your filters.</p>
+	<a class="btn btn-sm btn-outline-primary" href="{{$d.ListBasePath}}">Clear filters</a>
+	{{else if eq $d.TotalTaskCount 0}}
+	<p class="mb-2">You do not have any tasks yet.</p>
+	<a href="/tasks/new" class="btn btn-primary">New task</a>
+	{{else if $d.ArchivedView}}
+	<p class="text-muted mb-0">No archived tasks.</p>
+	{{else if $d.CompletedView}}
+	<p class="text-muted mb-2">No completed tasks yet.</p>
+	<a href="/tasks/new" class="btn btn-sm btn-outline-primary">New task</a>
+	{{else}}
+	<p class="text-muted mb-2">No open tasks right now.</p>
+	<p class="mb-2"><a href="/tasks/completed">View completed</a> or <a href="/tasks/new">create a task</a>.</p>
+	{{end}}
+</div>
 {{else}}
 <div class="list-group shadow-sm">
 	{{range $d.Tasks}}
